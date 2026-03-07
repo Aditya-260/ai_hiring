@@ -81,6 +81,15 @@ async def upload_resume(file: UploadFile = File(...), user=Depends(require_role(
     return {"message": "Resume uploaded", "filename": file.filename}
 
 
+@router.delete("/resume")
+async def remove_resume(user=Depends(require_role("candidate"))):
+    await users_collection.update_one(
+        {"_id": ObjectId(user["_id"])},
+        {"$unset": {"resume_url": "", "resume_filename": ""}},
+    )
+    return {"message": "Resume removed"}
+
+
 # ── Jobs ─────────────────────────────────────────────────
 
 @router.get("/jobs")

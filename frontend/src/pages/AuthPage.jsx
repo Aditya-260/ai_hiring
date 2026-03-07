@@ -13,7 +13,7 @@ export default function AuthPage({ mode }) {
     const [form, setForm] = useState({ name: '', email: '', password: '' });
     const [loading, setLoading] = useState(false);
 
-    const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/jobs', admin: '/admin/dashboard' };
+    const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/company', admin: '/admin/dashboard' };
 
     const handleSubmit = async (e) => {
         e.preventDefault();

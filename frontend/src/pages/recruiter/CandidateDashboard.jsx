@@ -10,6 +10,7 @@ export default function CandidateDashboard() {
     const [expandedId, setExpandedId] = useState(null);
     const [interviewDetail, setInterviewDetail] = useState(null);
     const [showRecording, setShowRecording] = useState(false);
+    const [expandedLogsId, setExpandedLogsId] = useState(null);
     const { showToast } = useToast();
 
 
@@ -44,6 +45,53 @@ export default function CandidateDashboard() {
         } catch (err) {
             showToast(err.response?.data?.detail || 'Error', 'error');
         }
+    };
+
+    const viewResume = async (candidateId, candidateName) => {
+        try {
+            const res = await api.get(`/recruiter/candidates/${candidateId}/resume`);
+            const { resume_url, resume_filename } = res.data;
+            // Open in new tab
+            const link = document.createElement('a');
+            link.href = resume_url;
+            link.download = resume_filename || `${candidateName}_resume`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch {
+            showToast('Resume not available for this candidate', 'error');
+        }
+    };
+
+    const jumpToTimestamp = async (candidateId, relativeTime) => {
+        // Parse "MM:SS" or "HH:MM:SS" into seconds
+        const parts = (relativeTime || '0:00').split(':').map(Number);
+        const seconds = parts.length === 3
+            ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+            : parts[0] * 60 + (parts[1] || 0);
+
+        // Ensure Q&A panel is open for this candidate
+        if (expandedId !== candidateId) {
+            try {
+                const res = await api.get(`/recruiter/candidates/${candidateId}/interview`);
+                setInterviewDetail(res.data);
+                setExpandedId(candidateId);
+            } catch {
+                showToast('No interview record found', 'error');
+                return;
+            }
+        }
+        // Show the recording player, then seek
+        setShowRecording(true);
+        setTimeout(() => {
+            const video = document.getElementById(`interview-video-${candidateId}`);
+            if (video) {
+                video.currentTime = seconds;
+                video.play().catch(() => { });
+                video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 350);
     };
 
     const recColors = { 'Highly Recommended': 'badge-green', 'Recommended': 'badge-yellow', 'Not Recommended': 'badge-red' };
@@ -102,14 +150,21 @@ export default function CandidateDashboard() {
                             </div>
 
                             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{ fontSize: 12, padding: '6px 12px' }}
+                                    onClick={() => viewResume(c.candidate_id, c.candidate_name)}
+                                >
+                                    📄 View Resume
+                                </button>
                                 {c.interview_score != null && (
                                     <button className="btn btn-secondary" style={{ fontSize: 12, padding: '6px 12px' }} onClick={() => viewInterview(c.id)}>
-                                        {expandedId === c.id ? 'Hide Q&A' : '📋 View Q&A & Recording'}
+                                        {expandedId === c.id ? '▲ Hide Q&A' : '📋 View Q&A & Recording'}
                                     </button>
                                 )}
                                 {c.status === 'interview_done' && c.interview_score == null && (
                                     <button className="btn btn-secondary" style={{ fontSize: 12, padding: '6px 12px' }} onClick={() => viewInterview(c.id)}>
-                                        {expandedId === c.id ? 'Hide Details' : '🎥 View Recording'}
+                                        {expandedId === c.id ? '▲ Hide Details' : '🎥 View Recording'}
                                     </button>
                                 )}
                                 {c.status !== 'shortlisted' && c.status !== 'rejected' && c.final_score != null && (
@@ -124,6 +179,7 @@ export default function CandidateDashboard() {
                                 )}
                             </div>
                         </div>
+
 
                         {expandedId === c.id && interviewDetail && (
                             <div style={{ borderTop: '1px solid var(--border)', padding: 20, background: 'var(--bg-secondary)' }}>
@@ -164,24 +220,41 @@ export default function CandidateDashboard() {
                                     </div>
                                 )}
 
-                                {/* Proctoring Log (Static Timestamps) */}
-                                {c.proctoring_warnings && c.proctoring_warnings.length > 0 && (
-                                    <div style={{ marginBottom: 28, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16 }}>
-                                        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#991b1b', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            🚨 AI Proctoring Logs
-                                        </h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                            {c.proctoring_warnings.map((w, i) => (
-                                                <div key={i} style={{ fontSize: 12, display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 10px', background: 'white', borderRadius: 6, border: '1px solid #fee2e2' }}>
-                                                    <span style={{ fontWeight: 600, color: '#dc2626', minWidth: 45 }}>
-                                                        [{w.relativeTime || '00:00'}]
-                                                    </span>
-                                                    <span style={{ color: '#7f1d1d', lineHeight: 1.4 }}>
-                                                        {w.message}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                {/* Proctoring Logs — always shown between recording and Q&A */}
+                                {c.proctoring_warnings?.length > 0 && (
+                                    <div style={{ marginBottom: 28, background: '#fff7f7', border: '1px solid #fecaca', borderRadius: 8, padding: 16 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#991b1b', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                                                🚨 AI Proctoring Logs <span style={{ fontWeight: 400, color: '#b91c1c', fontSize: 12 }}>({c.proctoring_warnings.length} events)</span>
+                                            </h4>
+                                            <button
+                                                onClick={() => setExpandedLogsId(expandedLogsId === c.id ? null : c.id)}
+                                                style={{ padding: '3px 12px', fontSize: 11, borderRadius: 20, border: '1px solid #dc2626', background: 'transparent', color: '#dc2626', cursor: 'pointer', fontWeight: 600 }}
+                                            >
+                                                {expandedLogsId === c.id ? '▲ Collapse' : '▼ Expand Log'}
+                                            </button>
                                         </div>
+                                        {expandedLogsId === c.id && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
+                                                {c.proctoring_warnings.map((w, wi) => (
+                                                    <div key={wi} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', background: 'white', borderRadius: 6, border: '1px solid #fee2e2' }}>
+                                                        <button
+                                                            onClick={() => jumpToTimestamp(c.id, w.relativeTime)}
+                                                            title={`Jump to ${w.relativeTime} in recording`}
+                                                            style={{
+                                                                padding: '3px 9px', fontSize: 11, borderRadius: 20,
+                                                                border: '1px solid #dc2626', background: '#dc2626',
+                                                                color: '#fff', cursor: 'pointer', fontWeight: 600,
+                                                                whiteSpace: 'nowrap', flexShrink: 0,
+                                                            }}
+                                                        >
+                                                            ⏩ {w.relativeTime || '0:00'}
+                                                        </button>
+                                                        <span style={{ color: '#7f1d1d', lineHeight: 1.4 }}>{w.message}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

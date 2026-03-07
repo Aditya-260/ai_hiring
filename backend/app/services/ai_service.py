@@ -32,40 +32,48 @@ def _difficulty_for_experience(experience: str) -> str:
 def _generate_questions_with_groq(
     role: str, skills: list[str], experience: str, difficulty: str, num_questions: int
 ) -> list[dict]:
-    """Use Groq LLM to generate high-quality interview questions."""
-    skills_str = ", ".join(skills) if skills else "general knowledge"
-    prompt = f"""Generate exactly {num_questions} interview questions for a {role} position.
+    """Use Groq LLM to generate skill-specific interview questions for each selected skill."""
+    if skills:
+        skill_assignments = [skills[i % len(skills)] for i in range(num_questions)]
+        skills_instruction = (
+            f"You MUST ask exactly ONE question per skill in this ordered list: {skill_assignments}.\n"
+            "Each question must directly and specifically test knowledge of that exact skill."
+        )
+    else:
+        skills_instruction = f"Ask {num_questions} general {role} interview questions."
 
-Candidate experience level: {experience} ({difficulty} difficulty)
-Required skills: {skills_str}
+    prompt = f"""Generate exactly {num_questions} technical interview questions for a {role} position.
 
-Requirements:
-- Questions should match the {difficulty} difficulty level
-- Cover different skills from the list
-- Be specific and practical, not generic
-- For "easy": test fundamental understanding
-- For "medium": test applied knowledge and problem-solving
-- For "hard": test system design, architecture, and deep expertise
+Candidate experience: {experience} ({difficulty} difficulty)
+Skills to test: {', '.join(skills) if skills else 'general'}
 
-Return ONLY a valid JSON array with objects having these keys:
-- "question": the interview question text
+STRICT RULES:
+{skills_instruction}
+- Match the {difficulty} difficulty level
+- For "easy": test fundamental understanding of the skill
+- For "medium": test applied, practical usage of the skill
+- For "hard": test architecture, design, or deep expertise in the skill
+- Each question MUST mention or directly relate to its assigned skill
+
+Return ONLY a valid JSON array, no markdown. Each object must have:
+- "question": the interview question
+- "skill": the skill being tested
 - "difficulty": "{difficulty}"
 
-Example: [{{"question": "...", "difficulty": "{difficulty}"}}]"""
+Example: [{{"question": "How does React virtual DOM improve performance?", "skill": "React", "difficulty": "medium"}}]"""
 
     try:
         response = _groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are an expert technical interviewer. Return ONLY valid JSON, no markdown, no extra text."},
+                {"role": "system", "content": "You are an expert technical interviewer. Return ONLY valid JSON array, no markdown, no extra text."},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=2000,
         )
         content = response.choices[0].message.content.strip()
 
-        # Extract JSON from response (handle markdown code blocks)
         if "```" in content:
             content = content.split("```")[1]
             if content.startswith("json"):
@@ -78,12 +86,14 @@ Example: [{{"question": "...", "difficulty": "{difficulty}"}}]"""
             questions.append({
                 "question_id": str(uuid.uuid4()),
                 "question": q["question"],
+                "skill": q.get("skill", ""),
                 "difficulty": difficulty,
             })
         return questions
     except Exception as e:
         print(f"[Groq] Question generation failed, falling back to rule-based: {e}")
         return None
+
 
 
 def _generate_questions_rule_based(

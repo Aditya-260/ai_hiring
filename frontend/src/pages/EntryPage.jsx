@@ -8,7 +8,7 @@ export default function EntryPage() {
 
     useEffect(() => {
         if (user) {
-            const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/jobs', admin: '/admin/dashboard' };
+            const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/company', admin: '/admin/dashboard' };
             navigate(routes[user.role] || '/entry');
         }
     }, [user, navigate]);

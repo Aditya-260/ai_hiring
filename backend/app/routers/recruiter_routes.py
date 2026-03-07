@@ -59,6 +59,17 @@ async def update_company(company_id: str, data: CompanyUpdate, user=Depends(requ
     return {"message": "Company updated"}
 
 
+@router.delete("/company/{company_id}")
+async def delete_company(company_id: str, user=Depends(require_role("recruiter"))):
+    company = await companies_collection.find_one({"_id": ObjectId(company_id), "recruiter_id": user["_id"]})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    await companies_collection.delete_one({"_id": ObjectId(company_id)})
+    # Cascade delete all jobs under this company
+    await jobs_collection.delete_many({"company_id": company_id})
+    return {"message": "Company deleted"}
+
+
 # ── Jobs ─────────────────────────────────────────────────
 
 @router.post("/jobs")
@@ -116,6 +127,21 @@ async def delete_job(job_id: str, user=Depends(require_role("recruiter"))):
         raise HTTPException(status_code=404, detail="Job not found")
     await jobs_collection.update_one({"_id": ObjectId(job_id)}, {"$set": {"is_active": False}})
     return {"message": "Job deactivated"}
+
+
+
+# ── Candidate Resume (for recruiter) ────────────────────
+
+@router.get("/candidates/{candidate_id}/resume")
+async def get_candidate_resume(candidate_id: str, user=Depends(require_role("recruiter"))):
+    """Let a recruiter view a candidate's resume for any job they own."""
+    candidate = await users_collection.find_one({"_id": ObjectId(candidate_id)})
+    if not candidate or not candidate.get("resume_url"):
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return {
+        "resume_url": candidate["resume_url"],
+        "resume_filename": candidate.get("resume_filename", "resume"),
+    }
 
 
 # ── Candidate Evaluation ────────────────────────────────

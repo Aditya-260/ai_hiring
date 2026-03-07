@@ -11,6 +11,7 @@ export default function CandidateProfile() {
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({ name: '', phone: '', experience_years: 0, skills: '' });
     const [uploading, setUploading] = useState(false);
+    const [removing, setRemoving] = useState(false);
 
     useEffect(() => {
         api.get('/candidate/profile')
@@ -61,6 +62,21 @@ export default function CandidateProfile() {
             showToast('Upload failed', 'error');
         } finally {
             setUploading(false);
+        }
+    };
+
+    const handleRemoveResume = async () => {
+        if (!window.confirm('Remove your uploaded resume?')) return;
+        setRemoving(true);
+        try {
+            await api.delete('/candidate/resume');
+            showToast('Resume removed');
+            const res = await api.get('/candidate/profile');
+            setProfile(res.data);
+        } catch {
+            showToast('Failed to remove resume', 'error');
+        } finally {
+            setRemoving(false);
         }
     };
 
@@ -117,7 +133,7 @@ export default function CandidateProfile() {
                                 )}
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setEditing(true)}>
                                 Edit Profile
                             </button>
@@ -125,6 +141,15 @@ export default function CandidateProfile() {
                                 {uploading ? 'Uploading...' : '📄 Upload Resume'}
                                 <input type="file" accept=".pdf,.doc,.docx" onChange={handleResume} style={{ display: 'none' }} />
                             </label>
+                            {profile?.resume_url && (
+                                <button
+                                    onClick={handleRemoveResume}
+                                    disabled={removing}
+                                    style={{ padding: '8px 14px', borderRadius: 8, border: '1.5px solid #e53e3e', background: 'transparent', color: '#e53e3e', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+                                >
+                                    {removing ? 'Removing...' : '🗑 Remove Resume'}
+                                </button>
+                            )}
                         </div>
                     </>
                 ) : (
