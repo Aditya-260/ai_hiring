@@ -22,3 +22,6 @@ build/
 .DS_Store
 .vscode/
 .idea/
+
+# Large model file — download via: python backend/proctoring/download_models.py
+backend/proctoring/shape_predictor_model/shape_predictor_68_face_landmarks.dat

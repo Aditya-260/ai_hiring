@@ -28,7 +28,9 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # ── Path setup: add proctoring folder so its modules can be imported ──────────
-PROCTOR_DIR = r"D:\Artificial-Intelligence-based-Online-Exam-Proctoring-System-main"
+# Points to backend/proctoring/ inside this repo — fully self-contained, no external folder needed
+PROCTOR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "proctoring")
+PROCTOR_DIR = os.path.normpath(PROCTOR_DIR)
 
 _orig_cwd = os.getcwd()
 _proctor_available = False

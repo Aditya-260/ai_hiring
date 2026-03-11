@@ -39,6 +39,7 @@ export default function AssessmentFlow() {
     const [liveTranscript, setLiveTranscript] = useState('');
     const [speechSupported, setSpeechSupported] = useState(true);
     const recognitionRef = useRef(null);
+    const [agreed, setAgreed] = useState(false);
 
 
     // Anti-cheating: tab switch detection
@@ -73,7 +74,7 @@ export default function AssessmentFlow() {
 
 
 
-    // Anti-cheating: disable copy-paste
+    // Anti-cheating: disable copy-paste AND right-click context menu
     useEffect(() => {
         const prevent = (e) => {
             if (phase === 'aptitude' || phase === 'interview') {
@@ -81,11 +82,18 @@ export default function AssessmentFlow() {
                 showToast('Copy/paste is disabled during assessment', 'error');
             }
         };
+        const preventContext = (e) => {
+            if (phase === 'aptitude' || phase === 'interview') {
+                e.preventDefault();
+            }
+        };
         document.addEventListener('copy', prevent);
         document.addEventListener('paste', prevent);
+        document.addEventListener('contextmenu', preventContext);
         return () => {
             document.removeEventListener('copy', prevent);
             document.removeEventListener('paste', prevent);
+            document.removeEventListener('contextmenu', preventContext);
         };
     }, [phase, showToast]);
 
@@ -110,14 +118,14 @@ export default function AssessmentFlow() {
     useEffect(() => {
         if (phase === 'interview') {
             // Initiate proctoring tracking on the backend (using a generic email/id for now)
-            fetch('http://127.0.0.1:5000/set_active_user', {
+            fetch('http://127.0.0.1:8000/api/proctor/set_active_user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: `candidate_${jobId}` })
             }).catch(e => console.error(e));
 
             // Connect to real-time proctoring stream
-            const eventSource = new EventSource('http://127.0.0.1:5000/warnings_feed');
+            const eventSource = new EventSource('http://127.0.0.1:8000/api/proctor/warnings_feed');
             eventSource.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.type !== "none" && data.type !== "heartbeat") {
@@ -150,6 +158,14 @@ export default function AssessmentFlow() {
         }
     }, [phase, jobId, showToast]);
 
+    // Stop proctoring camera after interview ends
+    const stopProctoring = () => {
+        // Clear the img src so camera indicator light turns off in browser
+        if (videoPreviewRef.current) videoPreviewRef.current.src = '';
+        // Tell FastAPI to stop the camera threads
+        fetch('http://127.0.0.1:8000/api/proctor/stop', { method: 'POST' }).catch(() => { });
+    };
+
     // ── Recording: start when interview begins, stop on phase change ──
     useEffect(() => {
         if (phase === 'interview') {
@@ -164,13 +180,14 @@ export default function AssessmentFlow() {
 
     const startRecording = async () => {
         try {
-            // Only request audio from the browser, avoiding camera conflict with OpenCV server
+            // Only request AUDIO from browser — OpenCV Python process owns the camera
+            // so we cannot use getUserMedia({video}) without blocking it.
             const audioStream = await navigator.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
             });
             recordingChunksRef.current = [];
 
-            // Setup a hidden canvas to capture the OpenCV feed from the img element
+            // Capture video from the MJPEG <img> element via canvas
             const canvas = document.createElement('canvas');
             canvas.width = 640;
             canvas.height = 480;
@@ -179,9 +196,7 @@ export default function AssessmentFlow() {
             let drawFrameId;
             const drawFrame = () => {
                 if (videoPreviewRef.current && videoPreviewRef.current.complete && videoPreviewRef.current.naturalWidth > 0) {
-                    try {
-                        ctx.drawImage(videoPreviewRef.current, 0, 0, canvas.width, canvas.height);
-                    } catch (e) { }
+                    try { ctx.drawImage(videoPreviewRef.current, 0, 0, canvas.width, canvas.height); } catch (e) { }
                 }
                 drawFrameId = requestAnimationFrame(drawFrame);
             };
@@ -205,7 +220,6 @@ export default function AssessmentFlow() {
                 videoBitsPerSecond: 150_000,
                 audioBitsPerSecond: 32_000,
             });
-
             recorder.drawFrameId = drawFrameId;
             recorder.audioStream = audioStream;
 
@@ -321,11 +335,13 @@ export default function AssessmentFlow() {
         return Math.min(prob, 100);
     };
 
-    const submitAllWarningsToBackend = async () => {
+    const submitAllWarningsToBackend = async (disqualified = false, disqualifyReason = '') => {
         try {
             await api.post(`/candidate/assessment/${jobId}/warnings`, {
                 warnings: proctoringWarnings,
-                cheating_probability: calculateCheatingProbability(proctoringWarnings, tabWarnings)
+                cheating_probability: calculateCheatingProbability(proctoringWarnings, tabWarnings),
+                disqualified,
+                disqualify_reason: disqualifyReason,
             });
         } catch (e) {
             console.error("Failed to save warnings", e);
@@ -404,7 +420,8 @@ export default function AssessmentFlow() {
                 recordingStreamRef.current = null;
             }
 
-            // First submit answers
+            // Stop proctoring camera — interview is over
+            stopProctoring();
             const formatted = interviewQs.map(q => ({
                 question_id: q.question_id,
                 question: q.question,
@@ -427,8 +444,6 @@ export default function AssessmentFlow() {
         }
     }, [interviewAnswers, interviewQs, jobId, showToast, proctoringWarnings, tabWarnings]);
 
-    // Silent background save used when candidate is disqualified (tab switch).
-    // Does NOT change phase — the 'disqualified' screen stays shown.
     const disqualifyInterview = useCallback(async () => {
         try {
             stopListening();
@@ -447,6 +462,9 @@ export default function AssessmentFlow() {
                 recordingStreamRef.current = null;
             }
 
+            // Stop proctoring camera
+            stopProctoring();
+
             // Submit whatever answers were given so far
             const formatted = interviewQs.map(q => ({
                 question_id: q.question_id,
@@ -455,8 +473,8 @@ export default function AssessmentFlow() {
             }));
             await api.post(`/candidate/interview/${jobId}/submit`, { answers: formatted }).catch(() => { });
 
-            // Save warnings + recording silently
-            await submitAllWarningsToBackend();
+            // Save warnings with disqualified flag
+            await submitAllWarningsToBackend(true, 'Tab switch detected during live interview');
             await uploadRecording();
         } catch (_) {
             // Silent — candidate already sees disqualified screen
@@ -468,7 +486,7 @@ export default function AssessmentFlow() {
         try {
             clearInterval(timerRef.current);
             await api.post(`/candidate/assessment/${jobId}/submit`, { answers }).catch(() => { });
-            await submitAllWarningsToBackend();
+            await submitAllWarningsToBackend(true, 'Exceeded allowed tab switches during Aptitude test');
         } catch (_) {
             // Silent
         }
@@ -486,23 +504,76 @@ export default function AssessmentFlow() {
 
     if (phase === 'intro') {
         return (
-            <div style={{ maxWidth: 600, margin: '60px auto', padding: '0 20px' }}>
-                <div className="card animate-fade-in" style={{ padding: 36, textAlign: 'center' }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
-                    <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>Assessment</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
-                        This assessment has two parts:<br />
-                        <strong>1. Aptitude Test</strong> — 20 MCQ questions (30 min, 40% cutoff)<br />
-                        <strong>2. AI Interview</strong> — 5 role-specific questions (45 min)
-                    </p>
-                    <div className="card" style={{ padding: 16, marginBottom: 24, background: 'var(--warning-light)', border: 'none' }}>
-                        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                            ⚠️ <strong>Anti-cheating measures active:</strong> Tab switching is monitored, copy-paste disabled, timer enforced.
-                        </p>
+            <div style={{ maxWidth: 840, margin: '40px auto', padding: '0 20px' }}>
+                <div className="card animate-fade-in" style={{ padding: '40px 48px', textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 32, textAlign: 'center', color: '#1e293b' }}>Instruction page</h2>
+
+                    <div style={{ color: '#334155', fontSize: 13, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                        <div>
+                            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 8, marginTop: 0 }}>Technical Setup:</h3>
+                            <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <li>This exam is designed to be taken exclusively on a laptop or Desktop.</li>
+                                <li>Ensure your device (Laptop or Desktop) is in good working condition with a reliable internet connection.</li>
+                                <li>Confirm that the webcam and microphone are functioning properly for video and audio monitoring during the exam.</li>
+                                <li>Use a supported web browser and update it to the latest version to avoid compatibility issues with the online exam platform.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Assessment Structure & Time Management:</h3>
+                            <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <li><strong>Part 1: Aptitude Test</strong> — 20 MCQ questions (30 min, 40% cutoff).</li>
+                                <li><strong>Part 2: Live AI Interview</strong> — 5 role-specific questions (45 min) requiring spoken answers.</li>
+                                <li>Plan your time effectively, allocating specific time slots for each section to ensure completion within the designated time.</li>
+                                <li>Keep an eye on the clock and pace yourself throughout the exam to avoid rushing through questions or running out of time.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Secure Environment:</h3>
+                            <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <li>Choose a quiet and well-lit room with minimal distractions to create an exam-friendly environment.</li>
+                                <li>Remove any unnecessary items from your desk or surrounding area to minimize the risk of academic misconduct.</li>
+                                <li>Inform family members or roommates about the scheduled exam time to avoid interruptions.</li>
+                            </ul>
+                        </div>
+
+                        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderLeft: '4px solid #ef4444', padding: '12px 16px', borderRadius: '4px', color: '#b91c1c', marginTop: 8 }}>
+                            <strong>Reminder:</strong> During the assessment if the student found switching the tab, the student will get two warnings and with the third time, the assessment will be closed and the attempt status will be marked as failed. Copy-pasting is also disabled.
+                        </div>
                     </div>
-                    <button className="btn btn-primary" onClick={startAptitude} disabled={loading} style={{ padding: '12px 32px' }}>
-                        {loading ? 'Loading...' : 'Begin Aptitude Test'}
-                    </button>
+
+                    <div style={{ marginTop: 28, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input
+                            type="checkbox"
+                            id="agreeCheckbox"
+                            checked={agreed}
+                            onChange={(e) => setAgreed(e.target.checked)}
+                            style={{ width: 18, height: 18, accentColor: '#ef4444', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="agreeCheckbox" style={{ fontSize: 14, fontWeight: 500, color: '#334155', cursor: 'pointer', userSelect: 'none' }}>
+                            Agree *
+                        </label>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, borderTop: '1px solid #e2e8f0', paddingTop: 24 }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => navigate('/candidate/jobs')}
+                            style={{ padding: '10px 28px', background: '#f87171', color: 'white', border: 'none' }}
+                        >
+                            Back
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={startAptitude}
+                            disabled={!agreed || loading}
+                            style={{ padding: '10px 28px', background: '#94a3b8', color: 'white', border: 'none', opacity: agreed ? 1 : 0.6, cursor: agreed ? 'pointer' : 'not-allowed' }}
+                        >
+                            {loading ? 'Processing...' : 'Next'}
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -511,70 +582,139 @@ export default function AssessmentFlow() {
     if (phase === 'aptitude') {
         const q = questions?.[currentQ];
         const totalQ = questions?.length || 0;
+        const answeredCount = Object.keys(answers).length;
+
         return (
-            <div style={{ maxWidth: 700, margin: '40px auto', padding: '0 20px' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <div>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Question {currentQ + 1} of {totalQ}</span>
-                        <div style={{ height: 4, width: 200, background: 'var(--bg-secondary)', borderRadius: 2, marginTop: 6 }}>
-                            <div style={{ height: '100%', width: `${totalQ ? ((currentQ + 1) / totalQ) * 100 : 0}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 0.3s' }} />
-                        </div>
+            <div
+                style={{ width: '100%', maxWidth: 1400, margin: '20px auto', padding: '0 24px', userSelect: 'none', display: 'flex', gap: 32, alignItems: 'flex-start' }}
+                onContextMenu={e => e.preventDefault()}
+            >
+                {/* ── Left: Question Navigation Sidebar ── */}
+                <div style={{
+                    width: 300, flexShrink: 0, background: 'white', borderRadius: 14,
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid var(--border)',
+                    padding: '22px 18px', position: 'sticky', top: 20,
+                }}>
+                    {/* Title + count */}
+                    <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 5 }}>Questions</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
+                        {answeredCount} / {totalQ} Answered
                     </div>
-                    <div className="badge badge-red" style={{ fontSize: 14, fontWeight: 600, padding: '6px 14px' }}>
-                        ⏱ {formatTime(timeLeft)}
-                    </div>
-                </div>
 
-                {tabWarnings > 0 && (
-                    <div style={{ padding: '8px 14px', background: 'var(--danger-light)', borderRadius: 8, marginBottom: 16, fontSize: 13, color: 'var(--danger)' }}>
-                        ⚠️ Tab switch warnings: {tabWarnings}/3
-                    </div>
-                )}
-
-                <div className="card" style={{ padding: 28 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 20, lineHeight: 1.5 }}>{q?.text}</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {q?.options?.map((opt, idx) => (
-                            <label
-                                key={idx}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 12,
-                                    padding: '12px 16px', borderRadius: 10,
-                                    border: `2px solid ${q?.id && answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}`,
-                                    background: q?.id && answers[q.id] === opt ? 'var(--accent-light)' : 'white',
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                }}
-                            >
-                                <input
-                                    type="radio"
-                                    name={`q-${q?.id || 'unknown'}`}
-                                    checked={q?.id ? answers[q.id] === opt : false}
-                                    onChange={() => q?.id && setAnswers({ ...answers, [q.id]: opt })}
-                                    style={{ accentColor: 'var(--accent)' }}
-                                />
-                                <span style={{ fontSize: 14 }}>{opt}</span>
-                            </label>
+                    {/* Legend */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+                        {[
+                            { color: '#2563eb', label: 'Current' },
+                            { color: '#16a34a', label: 'Answered' },
+                            { color: '#d1d5db', label: 'Not Answered' },
+                        ].map(({ color, label }) => (
+                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
+                                <span style={{ width: 14, height: 14, borderRadius: 3, background: color, display: 'inline-block', flexShrink: 0 }} />
+                                {label}
+                            </div>
                         ))}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
-                        <button
-                            className="btn btn-secondary"
-                            disabled={currentQ === 0}
-                            onClick={() => setCurrentQ(c => c - 1)}
-                        >
-                            ← Previous
-                        </button>
-                        {currentQ < totalQ - 1 ? (
-                            <button className="btn btn-primary" onClick={() => setCurrentQ(c => c + 1)}>
-                                Next →
+                    {/* Question grid */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                        {questions.map((ques, idx) => {
+                            const isCurrentQ = idx === currentQ;
+                            const isAnswered = ques?.id && answers[ques.id] !== undefined;
+                            let bg = '#e5e7eb';       // not answered
+                            let color = '#374151';
+                            if (isCurrentQ) { bg = '#2563eb'; color = 'white'; }
+                            else if (isAnswered) { bg = '#16a34a'; color = 'white'; }
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentQ(idx)}
+                                    style={{
+                                        width: 44, height: 44, border: 'none', borderRadius: 8,
+                                        background: bg, color: color,
+                                        fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                                        transition: 'transform 0.1s, box-shadow 0.1s',
+                                        boxShadow: isCurrentQ ? '0 0 0 3px rgba(37,99,235,0.3)' : 'none',
+                                    }}
+                                    onMouseEnter={e => { if (!isCurrentQ) e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                >
+                                    {idx + 1}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ── Right: Question area ── */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div>
+                            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Question {currentQ + 1} of {totalQ}</span>
+                            <div style={{ height: 4, width: '100%', maxWidth: 260, background: 'var(--bg-secondary)', borderRadius: 2, marginTop: 6 }}>
+                                <div style={{ height: '100%', width: `${totalQ ? ((answeredCount) / totalQ) * 100 : 0}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 0.3s' }} />
+                            </div>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, display: 'block' }}>
+                                {totalQ ? Math.round((answeredCount / totalQ) * 100) : 0}% Complete
+                            </span>
+                        </div>
+                        <div className="badge badge-red" style={{ fontSize: 14, fontWeight: 600, padding: '6px 14px' }}>
+                            ⏱ {formatTime(timeLeft)}
+                        </div>
+                    </div>
+
+                    {tabWarnings > 0 && (
+                        <div style={{ padding: '8px 14px', background: 'var(--danger-light)', borderRadius: 8, marginBottom: 14, fontSize: 13, color: 'var(--danger)' }}>
+                            ⚠️ Tab switch warnings: {tabWarnings}/3
+                        </div>
+                    )}
+
+                    <div className="card" style={{ padding: 28 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 20, lineHeight: 1.5 }}>
+                            Q{currentQ + 1}. {q?.text}
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {q?.options?.map((opt, idx) => (
+                                <label
+                                    key={idx}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 12,
+                                        padding: '12px 16px', borderRadius: 10,
+                                        border: `2px solid ${q?.id && answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}`,
+                                        background: q?.id && answers[q.id] === opt ? 'var(--accent-light)' : 'white',
+                                        cursor: 'pointer', transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`q-${q?.id || 'unknown'}`}
+                                        checked={q?.id ? answers[q.id] === opt : false}
+                                        onChange={() => q?.id && setAnswers({ ...answers, [q.id]: opt })}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <span style={{ fontSize: 14 }}>{opt}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+                            <button
+                                className="btn btn-secondary"
+                                disabled={currentQ === 0}
+                                onClick={() => setCurrentQ(c => c - 1)}
+                            >
+                                ← Previous
                             </button>
-                        ) : (
-                            <button className="btn btn-success" onClick={submitAptitude} disabled={loading}>
-                                {loading ? 'Submitting...' : 'Submit Test'}
-                            </button>
-                        )}
+                            {currentQ < totalQ - 1 ? (
+                                <button className="btn btn-primary" onClick={() => setCurrentQ(c => c + 1)}>
+                                    Next →
+                                </button>
+                            ) : (
+                                <button className="btn btn-success" onClick={submitAptitude} disabled={loading}>
+                                    {loading ? 'Submitting...' : 'Submit Test'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -610,7 +750,10 @@ export default function AssessmentFlow() {
         const q = interviewQs[currentQ];
         const currentAnswer = interviewAnswers[q?.question_id] || '';
         return (
-            <div style={{ maxWidth: 740, margin: '30px auto', padding: '0 20px' }}>
+            <div
+                style={{ maxWidth: 740, margin: '30px auto', padding: '0 20px', userSelect: 'none' }}
+                onContextMenu={e => e.preventDefault()}
+            >
 
                 {/* ── Top bar: progress + timer ── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
@@ -635,7 +778,7 @@ export default function AssessmentFlow() {
                     }}>
                         <img
                             ref={videoPreviewRef}
-                            src="http://127.0.0.1:5000/video_feed"
+                            src="http://127.0.0.1:8000/api/proctor/video_feed"
                             crossOrigin="anonymous"
                             alt="Proctoring stream"
                             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: 'scaleX(-1)' }}

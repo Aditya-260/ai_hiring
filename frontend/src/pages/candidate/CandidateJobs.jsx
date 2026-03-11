@@ -76,7 +76,14 @@ export default function CandidateJobs() {
                                         <span key={s} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>{s}</span>
                                     ))}
                                 </div>
-                                {job.description && <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>{job.description}</p>}
+                                {job.eligibility && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>🎓 Who can apply:</span>
+                                        <span style={{ fontSize: 11, fontWeight: 600, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', padding: '2px 10px', borderRadius: 20 }}>
+                                            {job.eligibility}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 {job.already_applied ? (
