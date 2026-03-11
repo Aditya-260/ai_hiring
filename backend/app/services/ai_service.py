@@ -54,6 +54,7 @@ STRICT RULES:
 - For "medium": test applied, practical usage of the skill
 - For "hard": test architecture, design, or deep expertise in the skill
 - Each question MUST mention or directly relate to its assigned skill
+- IMPORTANT: This is a VOICE/SPEECH-based interview. Do NOT ask questions that require writing code, debugging code, implementing algorithms, or solving coding problems. Ask conceptual, scenario-based, or design questions that can be answered verbally.
 
 Return ONLY a valid JSON array, no markdown. Each object must have:
 - "question": the interview question

@@ -10,6 +10,7 @@ export default function CandidateDashboard() {
     const [expandedId, setExpandedId] = useState(null);
     const [interviewDetail, setInterviewDetail] = useState(null);
     const [showRecording, setShowRecording] = useState(false);
+    const [videoSpeed, setVideoSpeed] = useState(1);
     const [expandedLogsId, setExpandedLogsId] = useState(null);
     const { showToast } = useToast();
 
@@ -131,22 +132,33 @@ export default function CandidateDashboard() {
                                         <span>Final: <strong style={{ color: 'var(--accent)' }}>{c.final_score != null ? `${c.final_score}%` : '—'}</strong></span>
 
                                         {/* Proctoring Data */}
-                                        {c.cheating_probability !== undefined && (
+                                        {c.proctoring_warnings?.length > 0 && (
                                             <span style={{
-                                                color: c.cheating_probability > 50 ? 'var(--danger)' : c.cheating_probability > 20 ? 'var(--warning)' : 'var(--success)',
+                                                color: 'var(--danger)',
                                                 fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: 'var(--bg-secondary)'
                                             }}>
-                                                ⚠️ AI Proctoring Alert: {c.cheating_probability}%
+                                                ⚠️ AI Proctoring Alert
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                     {c.recommendation && <span className={`badge ${recColors[c.recommendation] || ''}`}>{c.recommendation}</span>}
-                                    <span className={`badge ${c.status === 'shortlisted' ? 'badge-green' : c.status === 'rejected' ? 'badge-red' : 'badge-blue'}`} style={{ textTransform: 'capitalize' }}>
-                                        {c.status?.replace(/_/g, ' ')}
-                                    </span>
+                                    {c.disqualified ? (
+                                        <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: '#7f1d1d', color: '#fff', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            ⛔ Disqualified
+                                        </span>
+                                    ) : (
+                                        <span className={`badge ${c.status === 'shortlisted' ? 'badge-green' : c.status === 'rejected' ? 'badge-red' : 'badge-blue'}`} style={{ textTransform: 'capitalize' }}>
+                                            {c.status?.replace(/_/g, ' ')}
+                                        </span>
+                                    )}
                                 </div>
+                                {c.disqualified && c.disqualify_reason && (
+                                    <div style={{ marginTop: 6, fontSize: 12, color: '#991b1b', background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 6, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        🚨 <strong>Disqualification reason:</strong> {c.disqualify_reason}
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
@@ -196,13 +208,30 @@ export default function CandidateDashboard() {
                                                     </span>
                                                 )}
                                             </h4>
-                                            <button
-                                                className="btn btn-secondary"
-                                                style={{ fontSize: 12, padding: '5px 12px' }}
-                                                onClick={() => setShowRecording(v => !v)}
-                                            >
-                                                {showRecording ? '▲ Hide Recording' : '▶ Watch Recording'}
-                                            </button>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                {showRecording && (
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        style={{ fontSize: 11, padding: '5px 10px', fontWeight: 700 }}
+                                                        onClick={() => {
+                                                            const speeds = [1, 1.5, 2];
+                                                            const next = speeds[(speeds.indexOf(videoSpeed) + 1) % speeds.length];
+                                                            setVideoSpeed(next);
+                                                            const vid = document.getElementById(`interview-video-${c.id}`);
+                                                            if (vid) vid.playbackRate = next;
+                                                        }}
+                                                    >
+                                                        {videoSpeed}x Speed
+                                                    </button>
+                                                )}
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ fontSize: 12, padding: '5px 12px' }}
+                                                    onClick={() => setShowRecording(v => !v)}
+                                                >
+                                                    {showRecording ? '▲ Hide Recording' : '▶ Watch Recording'}
+                                                </button>
+                                            </div>
                                         </div>
                                         {showRecording && (
                                             <div style={{ background: '#0a0a0a', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', border: '1px solid #222' }}>
