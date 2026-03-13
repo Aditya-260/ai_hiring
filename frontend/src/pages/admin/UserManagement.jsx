@@ -44,7 +44,7 @@ export default function UserManagement() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700 }}>User Management</h1>
                 <div style={{ display: 'flex', gap: 4 }}>
-                    {['all', 'candidate', 'recruiter', 'admin'].map(f => (
+                    {['all', 'candidate', 'recruiter'].map(f => (
                         <button
                             key={f}
                             className={`btn ${filter === f ? 'btn-primary' : 'btn-secondary'}`}

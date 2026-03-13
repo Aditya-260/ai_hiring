@@ -17,7 +17,7 @@ def detectFace(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     faceDetector = dlib.get_frontal_face_detector()
-    faces = faceDetector(gray,0)
+    faces = faceDetector(gray, 1) # upsample=1 catches smaller faces in the background
 
     #Count the number of the faces
     faceCount = len(faces)

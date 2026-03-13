@@ -32,6 +32,9 @@ router = APIRouter(prefix="/api/candidate", tags=["candidate"])
 class ProctoringWarningsInput(BaseModel):
     warnings: list
     cheating_probability: float
+    disqualified: bool = False
+    disqualify_reason: str = ''
+    tab_warnings: int = 0
 
 class RecordingInput(BaseModel):
     recording_b64: str  # data:video/webm;base64,...
@@ -52,9 +55,12 @@ router = APIRouter(prefix="/api/candidate", tags=["candidate"])
 async def get_profile(user=Depends(require_role("candidate"))):
     return {
         "id": user["_id"],
-        "name": user["name"],
+        "name": f"{user.get('first_name', user.get('name', ''))} {user.get('last_name', '')}".strip() or "Unknown",
         "email": user["email"],
         "phone": user.get("phone"),
+        "age": user.get("age"),
+        "gender": user.get("gender"),
+        "university": user.get("university"),
         "experience_years": user.get("experience_years", 0),
         "skills": user.get("skills", []),
         "resume_url": user.get("resume_url"),
@@ -380,12 +386,19 @@ async def save_proctoring_warnings(job_id: str, data: ProctoringWarningsInput, u
     if not app:
         raise HTTPException(status_code=400, detail="Application not found")
 
+    update_fields = {
+        "proctoring_warnings": data.warnings,
+        "cheating_probability": data.cheating_probability,
+        "tab_switches": data.tab_warnings,
+    }
+    if data.disqualified:
+        update_fields["disqualified"] = True
+        update_fields["disqualify_reason"] = data.disqualify_reason
+        update_fields["status"] = "disqualified"
+
     await applications_collection.update_one(
         {"_id": app["_id"]},
-        {"$set": {
-            "proctoring_warnings": data.warnings,
-            "cheating_probability": data.cheating_probability
-        }},
+        {"$set": update_fields},
     )
     
     await system_logs_collection.insert_one({

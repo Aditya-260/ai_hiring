@@ -10,10 +10,10 @@ export default function AuthPage({ mode }) {
     const { login, signup } = useAuth();
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [form, setForm] = useState({ name: '', email: '', password: '' });
+    const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', phone: '', confirmPassword: '', countryCode: '+91' });
     const [loading, setLoading] = useState(false);
 
-    const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/company', admin: '/admin/dashboard' };
+    const routes = { candidate: '/candidate/jobs', recruiter: '/recruiter/company' };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -24,7 +24,19 @@ export default function AuthPage({ mode }) {
                 showToast('Welcome back!');
                 navigate(routes[user.role] || '/entry');
             } else {
-                const user = await signup(form.name, form.email, form.password, actualRole);
+                if (form.password !== form.confirmPassword) {
+                    showToast('Passwords do not match', 'error');
+                    setLoading(false);
+                    return;
+                }
+                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+                if (!passwordRegex.test(form.password)) {
+                    showToast('Password must be at least 8 chars with uppercase, lowercase, number, and special char', 'error');
+                    setLoading(false);
+                    return;
+                }
+                const fullPhone = form.countryCode + form.phone;
+                const user = await signup(form.firstName, form.lastName, form.email, form.password, fullPhone, actualRole);
                 showToast('Account created!');
                 navigate(routes[user.role] || '/entry');
             }
@@ -62,23 +74,68 @@ export default function AuthPage({ mode }) {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {!isLogin && (
-                        <div>
-                            <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>Full Name</label>
-                            <input
-                                className="input"
-                                placeholder="Enter your name"
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                required
-                            />
-                        </div>
+                        <>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>First Name</label>
+                                    <input
+                                        className="input"
+                                        placeholder="First name"
+                                        value={form.firstName}
+                                        onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>Last Name</label>
+                                    <input
+                                        className="input"
+                                        placeholder="Last name"
+                                        value={form.lastName}
+                                        onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>Phone Number</label>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <select 
+                                        className="input" 
+                                        style={{ width: '100px', padding: '0 8px' }}
+                                        value={form.countryCode}
+                                        onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
+                                    >
+                                        <option value="+91">+91 (IN)</option>
+                                        <option value="+1">+1 (US/CA)</option>
+                                        <option value="+44">+44 (UK)</option>
+                                        <option value="+61">+61 (AU)</option>
+                                        <option value="+81">+81 (JP)</option>
+                                        <option value="+86">+86 (CN)</option>
+                                    </select>
+                                    <input
+                                        className="input"
+                                        style={{ flex: 1 }}
+                                        type="tel"
+                                        pattern="\d{10}"
+                                        maxLength={10}
+                                        title="Needs to be exactly 10 digits"
+                                        value={form.phone}
+                                        onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </>
                     )}
                     <div>
-                        <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>Email</label>
+                        <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>
+                            {isLogin ? 'Email or Phone Number' : 'Email'}
+                        </label>
                         <input
                             className="input"
-                            type="email"
-                            placeholder="you@example.com"
+                            type={isLogin ? "text" : "email"}
+                            placeholder={isLogin ? "you@example.com or +919876543210" : "you@example.com"}
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
                             required
@@ -89,13 +146,26 @@ export default function AuthPage({ mode }) {
                         <input
                             className="input"
                             type="password"
-                            placeholder="••••••••"
                             value={form.password}
                             onChange={(e) => setForm({ ...form, password: e.target.value })}
                             required
-                            minLength={6}
+                            minLength={8}
                         />
+                        {!isLogin && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Must be at least 8 chars with uppercase, lowercase, number & special char.</p>}
                     </div>
+                    {!isLogin && (
+                        <div>
+                            <label style={{ fontSize: 13, fontWeight: 500, marginBottom: 6, display: 'block', color: 'var(--text-secondary)' }}>Confirm Password</label>
+                            <input
+                                className="input"
+                                type="password"
+                                value={form.confirmPassword}
+                                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                                required
+                                minLength={8}
+                            />
+                        </div>
+                    )}
                     <button
                         className="btn btn-primary"
                         type="submit"

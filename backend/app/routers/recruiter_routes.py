@@ -158,7 +158,7 @@ async def get_candidates(job_id: str, user=Depends(require_role("recruiter"))):
         apps.append({
             "id": str(app["_id"]),
             "candidate_id": app["candidate_id"],
-            "candidate_name": candidate["name"] if candidate else "Unknown",
+            "candidate_name": f"{candidate.get('first_name', candidate.get('name', ''))} {candidate.get('last_name', '')}".strip() if candidate else "Unknown",
             "candidate_email": candidate["email"] if candidate else "",
             "aptitude_score": app.get("aptitude_score"),
             "interview_score": app.get("interview_score"),
@@ -167,6 +167,10 @@ async def get_candidates(job_id: str, user=Depends(require_role("recruiter"))):
             "status": app["status"],
             "created_at": app.get("created_at"),
             "proctoring_warnings": app.get("proctoring_warnings", []),
+            "cheating_probability": app.get("cheating_probability"),
+            "disqualified": app.get("disqualified", False),
+            "disqualify_reason": app.get("disqualify_reason", ""),
+            "tab_switches": app.get("tab_switches", 0),
         })
 
     ranked = rank_candidates(apps)

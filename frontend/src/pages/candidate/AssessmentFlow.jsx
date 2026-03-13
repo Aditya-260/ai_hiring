@@ -18,6 +18,7 @@ export default function AssessmentFlow() {
     const [interviewAnswers, setInterviewAnswers] = useState({});
     const [loading, setLoading] = useState(false);
     const [forceSubmit, setForceSubmit] = useState(null);
+    const [confirmSubmit, setConfirmSubmit] = useState(null);
     const [recordingStatus, setRecordingStatus] = useState('idle'); // idle | recording | uploading | done | error
 
     // Proctoring State
@@ -342,6 +343,7 @@ export default function AssessmentFlow() {
                 cheating_probability: calculateCheatingProbability(proctoringWarnings, tabWarnings),
                 disqualified,
                 disqualify_reason: disqualifyReason,
+                tab_warnings: tabWarnings,
             });
         } catch (e) {
             console.error("Failed to save warnings", e);
@@ -371,6 +373,10 @@ export default function AssessmentFlow() {
         try {
             clearInterval(timerRef.current);
             const res = await api.post(`/candidate/assessment/${jobId}/submit`, { answers });
+            
+            // Send warnings collected during aptitude, in case they fail and don't take the interview.
+            await submitAllWarningsToBackend();
+
             setResult(res.data);
             setPhase('aptitude_result');
         } catch (err) {
@@ -378,7 +384,7 @@ export default function AssessmentFlow() {
         } finally {
             setLoading(false);
         }
-    }, [answers, jobId, showToast]);
+    }, [answers, jobId, showToast, proctoringWarnings, tabWarnings]);
 
     // Start interview
     const startInterview = async () => {
@@ -710,13 +716,39 @@ export default function AssessmentFlow() {
                                     Next →
                                 </button>
                             ) : (
-                                <button className="btn btn-success" onClick={submitAptitude} disabled={loading}>
+                                <button className="btn btn-success" onClick={() => setConfirmSubmit('aptitude')} disabled={loading}>
                                     {loading ? 'Submitting...' : 'Submit Test'}
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {confirmSubmit === 'aptitude' && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div className="card animate-fade-in" style={{ padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', background: 'white' }}>
+                            <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>Ready to Submit?</h3>
+                            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, whiteSpace: 'normal', lineHeight: 1.5 }}>
+                                Are you sure you want to submit your aptitude test? You cannot return to these questions.
+                            </p>
+                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                                <button className="btn btn-secondary" onClick={() => setConfirmSubmit(null)} disabled={loading}>
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="btn btn-primary" 
+                                    onClick={() => {
+                                        submitAptitude();
+                                        setConfirmSubmit(null);
+                                    }} 
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Submitting...' : 'Confirm Submission'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -868,12 +900,38 @@ export default function AssessmentFlow() {
                                 Next →
                             </button>
                         ) : (
-                            <button className="btn btn-success" onClick={submitInterview} disabled={loading}>
+                            <button className="btn btn-success" onClick={() => setConfirmSubmit('interview')} disabled={loading}>
                                 {loading ? 'Submitting…' : 'Submit Interview ✓'}
                             </button>
                         )}
                     </div>
                 </div>
+
+                {confirmSubmit === 'interview' && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div className="card animate-fade-in" style={{ padding: 32, maxWidth: 400, width: '100%', textAlign: 'center', background: 'white' }}>
+                            <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>Ready to Submit?</h3>
+                            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, whiteSpace: 'normal', lineHeight: 1.5 }}>
+                                Are you sure you want to submit your interview? This will securely save your recording.
+                            </p>
+                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                                <button className="btn btn-secondary" onClick={() => setConfirmSubmit(null)} disabled={loading}>
+                                    Cancel
+                                </button>
+                                <button 
+                                    className="btn btn-primary" 
+                                    onClick={() => {
+                                        submitInterview();
+                                        setConfirmSubmit(null);
+                                    }} 
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Submitting...' : 'Confirm Submission'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

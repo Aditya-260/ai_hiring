@@ -4,12 +4,36 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 
 export default function CandidateProfile() {
+    const maharashtraUniversities = [
+        "Select University",
+        "Savitribai Phule Pune University (SPPU)",
+        "University of Mumbai",
+        "Dr. Babasaheb Ambedkar Marathwada University (BAMU)",
+        "Shivaji University, Kolhapur",
+        "Sant Gadge Baba Amravati University",
+        "Rashtrasant Tukadoji Maharaj Nagpur University (RTMNU)",
+        "Swami Ramanand Teerth Marathwada University (SRTMU)",
+        "North Maharashtra University (NMU)",
+        "Solapur University",
+        "Gondwana University",
+        "Visvesvaraya National Institute of Technology (VNIT), Nagpur",
+        "Indian Institute of Technology (IIT), Bombay",
+        "College of Engineering, Pune (COEP)",
+        "Veermata Jijabai Technological Institute (VJTI), Mumbai",
+        "Institute of Chemical Technology (ICT), Mumbai",
+        "Symbiosis International University",
+        "Bharati Vidyapeeth Deemed University",
+        "MIT World Peace University (MIT-WPU)",
+        "NMIMS (Narsee Monjee Institute of Management Studies)",
+        "K. J. Somaiya University",
+        "Other"
+    ];
     const { user, setUser } = useAuth();
     const { showToast } = useToast();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ name: '', phone: '', experience_years: 0, skills: '' });
+    const [form, setForm] = useState({ name: '', phone: '', experience_years: 0, skills: '', age: '', gender: '', university: '' });
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState(false);
 
@@ -22,6 +46,9 @@ export default function CandidateProfile() {
                     phone: res.data.phone || '',
                     experience_years: res.data.experience_years || 0,
                     skills: (res.data.skills || []).join(', '),
+                    age: res.data.age || '',
+                    gender: res.data.gender || '',
+                    university: res.data.university || '',
                 });
             })
             .catch(() => { })
@@ -36,6 +63,9 @@ export default function CandidateProfile() {
                 phone: form.phone || null,
                 experience_years: parseInt(form.experience_years) || 0,
                 skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
+                age: form.age ? parseInt(form.age) : null,
+                gender: form.gender || null,
+                university: form.university || null,
             });
             showToast('Profile updated!');
             setEditing(false);
@@ -112,6 +142,18 @@ export default function CandidateProfile() {
                                 <p style={{ fontSize: 14, fontWeight: 500 }}>{profile?.phone || '—'}</p>
                             </div>
                             <div>
+                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Age</p>
+                                <p style={{ fontSize: 14, fontWeight: 500 }}>{profile?.age || '—'}</p>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Gender</p>
+                                <p style={{ fontSize: 14, fontWeight: 500, textTransform: 'capitalize' }}>{profile?.gender || '—'}</p>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>University</p>
+                                <p style={{ fontSize: 14, fontWeight: 500 }}>{profile?.university || '—'}</p>
+                            </div>
+                            <div>
                                 <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Experience</p>
                                 <p style={{ fontSize: 14, fontWeight: 500 }}>{profile?.experience_years || 0} years</p>
                             </div>
@@ -169,6 +211,41 @@ export default function CandidateProfile() {
                                     <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Experience (years)</label>
                                     <input className="input" type="number" min="0" max="30" value={form.experience_years} onChange={e => setForm({ ...form, experience_years: e.target.value })} />
                                 </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Age</label>
+                                    <input 
+                                        className="input" 
+                                        type="number" 
+                                        min="18" 
+                                        max="99" 
+                                        value={form.age} 
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                                            setForm({ ...form, age: val });
+                                        }} 
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Gender</label>
+                                    <select className="input" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>University</label>
+                                <select className="input" value={form.university} onChange={e => setForm({ ...form, university: e.target.value })} required>
+                                    {maharashtraUniversities.map(uni => (
+                                        <option key={uni} value={uni === "Select University" ? "" : uni} disabled={uni === "Select University"}>
+                                            {uni}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Skills (comma separated)</label>

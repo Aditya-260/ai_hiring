@@ -132,6 +132,14 @@ export default function CandidateDashboard() {
                                         <span>Final: <strong style={{ color: 'var(--accent)' }}>{c.final_score != null ? `${c.final_score}%` : '—'}</strong></span>
 
                                         {/* Proctoring Data */}
+                                        {c.tab_switches > 0 && (
+                                            <span style={{
+                                                color: '#b45309',
+                                                fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#fef3c7'
+                                            }}>
+                                                👀 Tab Switches: {c.tab_switches}
+                                            </span>
+                                        )}
                                         {c.proctoring_warnings?.length > 0 && (
                                             <span style={{
                                                 color: 'var(--danger)',

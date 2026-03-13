@@ -46,7 +46,7 @@ async def list_users():
     async for u in users_collection.find():
         users.append({
             "id": str(u["_id"]),
-            "name": u["name"],
+            "name": f"{u.get('first_name', u.get('name', ''))} {u.get('last_name', '')}".strip() or "Unknown",
             "email": u["email"],
             "role": u["role"],
             "blocked": u.get("blocked", False),

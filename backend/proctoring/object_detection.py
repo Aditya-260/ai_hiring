@@ -25,6 +25,10 @@ frame_id = 0
 
 def detectObject(frame):
 
+    # Only flag these specific items as cheating materials or extra people.
+    # YOLOv3-tiny frequently misclassifies smartphones as "remote".
+    SUSPICIOUS_CLASSES = {"cell phone", "remote", "book", "laptop", "person"}
+
     labels_this_frame = []
 
     height, width, channels = frame.shape
@@ -48,7 +52,7 @@ def detectObject(frame):
             class_id = np.argmax(scores)
             confidence = scores[class_id]
 
-            if confidence > 0.3:
+            if confidence > 0.2:  # lowered from 0.3 for better phone/book detection
 
                 #object detected
                 center_x = int(detection[0]*width)
@@ -65,17 +69,25 @@ def detectObject(frame):
                 confidences.append(float(confidence))
                 class_ids.append(class_id)
 
-    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.3, 0.4)
 
     for i in range(len(boxes)):
         if i in indexes:
             #show the box only if it comes in non-max supression box
-            #x,y,w,h = boxes[i]
+            x, y, w, h = boxes[i]
             label = str(label_classes[class_ids[i]])
-
-            #color = colors[class_ids[i]]
-            labels_this_frame.append((label, confidences[i]))
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-	 		# cv2.putText(frame, label, (x, y + 30), font, 3, color, 3)
+            
+            # Only return the label if it's considered suspicious
+            if label in SUSPICIOUS_CLASSES:
+                # If YOLO thinks it's a remote, it's almost certainly a phone in this context
+                if label == "remote":
+                    label = "cell phone (detected as remote)"
+                
+                labels_this_frame.append((label, confidences[i]))
+                
+                # DRAW ON THE FRAME FOR DEBUGGING
+                color = (0, 0, 255) if "phone" in label else (0, 255, 255)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                cv2.putText(frame, f"{label} {confidences[i]:.2f}", (x, max(20, y - 10)), font, 1.5, color, 2)
 
     return labels_this_frame

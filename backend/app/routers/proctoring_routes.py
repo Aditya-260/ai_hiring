@@ -145,7 +145,7 @@ def _analysis_thread():
                 elif faceCount == 0:
                     _push_warning("danger", "No face detected!")
 
-                if faceCount == 1:
+                if faceCount >= 1:
                     # Head pose — suppress console print spam, but STILL send SSE warnings to the UI
                     with open(os.devnull, 'w') as devnull:
                         with contextlib.redirect_stdout(devnull):
@@ -156,15 +156,25 @@ def _analysis_thread():
                     ):
                         _push_warning("danger", f"Head pose: {head_status}")
 
-                    # Object detection — run every 3rd frame for better phone detection
-                    # Use original numpy frame (no JPEG degradation) for best accuracy
-                    if frame_count % 3 == 0:
-                        suspicious_objs = [
-                            obj for obj in detectObject(frame) if obj[0] != "person"
-                        ]
-                        if suspicious_objs:
-                            names = ", ".join(o[0] for o in suspicious_objs)
-                            _push_warning("danger", f"Suspicious object(s): {names}")
+                # Object detection — runs every 2nd frame REGARDLESS of face count
+                # This ensures phones/books are caught even when multiple people are in frame
+                if frame_count % 2 == 0:
+                    detected_items = detectObject(frame)
+                    
+                    # 1. Check for multiple people via YOLO (fallback for dlib side-profile misses)
+                    person_count = sum(1 for obj in detected_items if obj[0] == "person")
+                    if person_count > 1 and faceCount <= 1:
+                        _push_warning("danger", "Multiple faces detected!")
+                    elif person_count >= 1 and faceCount == 0:
+                        # YOLO sees a person but dlib doesn't see a face (e.g. looking away)
+                        # We suppress the 'No face detected' warning to avoid annoying the user
+                        pass
+
+                    # 2. Check for actual suspicious objects
+                    suspicious_objs = [obj for obj in detected_items if obj[0] != "person"]
+                    if suspicious_objs:
+                        names = ", ".join(o[0] for o in suspicious_objs)
+                        _push_warning("danger", f"Suspicious object(s): {names}")
 
             except Exception as e:
                 logger.debug(f"Analysis error (non-fatal): {e}")
