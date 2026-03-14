@@ -14,16 +14,14 @@ const ROLE_SKILLS = {
 
 const ROLES = Object.keys(ROLE_SKILLS);
 
-const SALARY_RANGES = [
-    '₹3-5 LPA', '₹5-8 LPA', '₹8-12 LPA', '₹12-18 LPA',
-];
+
 
 const ELIGIBILITY_OPTIONS = ['B. Tech', 'M. Tech', 'Both B. Tech & M. Tech'];
 
 const emptyForm = {
     title: '', role: '', experience: 'Fresher',
     eligibility: '', skills: '', description: '',
-    salary: '', company_id: '',
+    company_id: '',
 };
 const errStyle = { fontSize: 12, color: '#e53e3e', marginTop: 4 };
 
@@ -79,7 +77,6 @@ export default function RecruiterJobs() {
         if (!form.experience) e.experience = 'Please select experience level.';
         if (!form.eligibility) e.eligibility = 'Please select an eligibility.';
         if (selectedSkills.length === 0) e.skills = 'Please select at least one skill.';
-        if (!form.salary) e.salary = 'Please select a salary range.';
         if (!form.company_id) e.company_id = 'Please select a company.';
         return e;
     };
@@ -220,21 +217,6 @@ export default function RecruiterJobs() {
                                 {ELIGIBILITY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                             {errors.eligibility && <p style={errStyle}>{errors.eligibility}</p>}
-                        </div>
-
-                        {/* Salary Range */}
-                        <div>
-                            <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Salary Range * <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 12 }}>(hidden from candidates)</span></label>
-                            <select
-                                className="input"
-                                value={form.salary}
-                                onChange={e => set('salary', e.target.value)}
-                                style={errors.salary ? { borderColor: '#e53e3e' } : {}}
-                            >
-                                <option value="">Select Salary Range</option>
-                                {SALARY_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                            {errors.salary && <p style={errStyle}>{errors.salary}</p>}
                         </div>
 
                         {/* Company */}

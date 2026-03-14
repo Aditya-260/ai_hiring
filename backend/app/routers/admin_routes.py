@@ -48,6 +48,7 @@ async def list_users():
             "id": str(u["_id"]),
             "name": f"{u.get('first_name', u.get('name', ''))} {u.get('last_name', '')}".strip() or "Unknown",
             "email": u["email"],
+            "phone": u.get("phone", "N/A"),
             "role": u["role"],
             "blocked": u.get("blocked", False),
             "created_at": u.get("created_at"),

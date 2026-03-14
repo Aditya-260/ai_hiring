@@ -14,6 +14,7 @@ import CandidateProfile from './pages/candidate/CandidateProfile';
 import RecruiterCompany from './pages/recruiter/RecruiterCompany';
 import RecruiterJobs from './pages/recruiter/RecruiterJobs';
 import CandidateDashboard from './pages/recruiter/CandidateDashboard';
+import RecruiterDecisions from './pages/recruiter/RecruiterDecisions';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import CompanyManagement from './pages/admin/CompanyManagement';
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="/recruiter/company" element={<ProtectedRoute roles={['recruiter']}><Layout><RecruiterCompany /></Layout></ProtectedRoute>} />
             <Route path="/recruiter/jobs" element={<ProtectedRoute roles={['recruiter']}><Layout><RecruiterJobs /></Layout></ProtectedRoute>} />
             <Route path="/recruiter/job/:jobId/candidates" element={<ProtectedRoute roles={['recruiter']}><Layout><CandidateDashboard /></Layout></ProtectedRoute>} />
+            <Route path="/recruiter/decisions" element={<ProtectedRoute roles={['recruiter']}><Layout><RecruiterDecisions /></Layout></ProtectedRoute>} />
 
             {/* Admin */}
             <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />

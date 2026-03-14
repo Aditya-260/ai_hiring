@@ -178,6 +178,52 @@ async def get_candidates(job_id: str, user=Depends(require_role("recruiter"))):
     return ranked
 
 
+@router.get("/decisions")
+async def get_decisions(user=Depends(require_role("recruiter"))):
+    """Fetch all shortlisted and rejected candidates across all jobs for a recruiter."""
+    # 1. Get all jobs owned by this recruiter
+    job_cursor = jobs_collection.find({"recruiter_id": user["_id"]})
+    jobs = await job_cursor.to_list(length=None)
+    job_ids = [str(job["_id"]) for job in jobs]
+    job_map = {str(job["_id"]): job["title"] for job in jobs}
+
+    if not job_ids:
+        return []
+
+    # 2. Get applications for these jobs with status shortlisted or rejected
+    apps = []
+    async for app in applications_collection.find({
+        "job_id": {"$in": job_ids},
+        "status": {"$in": ["shortlisted", "rejected"]}
+    }):
+        candidate = await users_collection.find_one({"_id": ObjectId(app["candidate_id"])}) if ObjectId.is_valid(app["candidate_id"]) else None
+        
+        apps.append({
+            "id": str(app["_id"]),
+            "candidate_id": app["candidate_id"],
+            "candidate_name": f"{candidate.get('first_name', candidate.get('name', ''))} {candidate.get('last_name', '')}".strip() if candidate else "Unknown",
+            "candidate_email": candidate["email"] if candidate else "",
+            "job_id": app["job_id"],
+            "job_title": job_map.get(app["job_id"], "Unknown Job"),
+            "aptitude_score": app.get("aptitude_score"),
+            "interview_score": app.get("interview_score"),
+            "final_score": app.get("final_score"),
+            "recommendation": app.get("recommendation"),
+            "status": app["status"],
+            "created_at": app.get("created_at"),
+            "proctoring_warnings": app.get("proctoring_warnings", []),
+            "cheating_probability": app.get("cheating_probability"),
+            "disqualified": app.get("disqualified", False),
+            "disqualify_reason": app.get("disqualify_reason", ""),
+            "tab_switches": app.get("tab_switches", 0),
+        })
+
+    # Sort primarily by status (shortlisted first) then by score
+    apps.sort(key=lambda x: (0 if x["status"] == "shortlisted" else 1, -(x.get("final_score") or 0)))
+    
+    return apps
+
+
 @router.get("/candidates/{application_id}/interview")
 async def get_interview_detail(application_id: str, user=Depends(require_role("recruiter"))):
     record = await interview_records_collection.find_one({"application_id": application_id})

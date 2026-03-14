@@ -63,6 +63,7 @@ export default function UserManagement() {
                         <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                             <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Name</th>
                             <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Email</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Phone</th>
                             <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Role</th>
                             <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Status</th>
                             <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', fontSize: 13 }}>Action</th>
@@ -73,6 +74,7 @@ export default function UserManagement() {
                             <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                 <td style={{ padding: '12px 16px', fontWeight: 500 }}>{u.name}</td>
                                 <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                                <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{u.phone || 'N/A'}</td>
                                 <td style={{ padding: '12px 16px' }}>
                                     <span className="badge badge-blue" style={{ textTransform: 'capitalize' }}>{u.role}</span>
                                 </td>

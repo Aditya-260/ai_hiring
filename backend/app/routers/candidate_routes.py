@@ -103,7 +103,7 @@ async def list_jobs(user=Depends(require_role("candidate"))):
     jobs = []
     async for job in jobs_collection.find({"is_active": True}):
         job_id = str(job["_id"])
-        company = await companies_collection.find_one({"_id": job["company_id"]}) if job.get("company_id") else None
+        company = await companies_collection.find_one({"_id": ObjectId(job["company_id"])}) if job.get("company_id") else None
         # Check if already applied
         existing = await applications_collection.find_one({
             "candidate_id": user["_id"],

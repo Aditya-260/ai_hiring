@@ -99,11 +99,20 @@ export default function CandidateDashboard() {
 
     if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading candidates...</div>;
 
+    const totalCount = candidates.length;
+    const shortlistedCount = candidates.filter(c => c.status === 'shortlisted').length;
+    const rejectedCount = candidates.filter(c => c.status === 'rejected' || c.disqualified).length;
+
     return (
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
             <div style={{ marginBottom: 24 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Candidate Evaluation</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{candidates.length} applicants — ranked by final score</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 8 }}>{totalCount} applicants — ranked by final score</p>
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <span className="badge badge-blue">Total: {totalCount}</span>
+                    <span className="badge badge-green">Shortlisted: {shortlistedCount}</span>
+                    <span className="badge badge-red">Rejected: {rejectedCount}</span>
+                </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

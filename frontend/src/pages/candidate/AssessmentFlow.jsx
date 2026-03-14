@@ -75,6 +75,19 @@ export default function AssessmentFlow() {
 
 
 
+    // Anti-cheating: Prevent browser back button
+    useEffect(() => {
+        if (phase === 'aptitude' || phase === 'interview') {
+            window.history.pushState(null, null, window.location.href);
+            const handlePopState = (e) => {
+                showToast('You cannot go back during an active assessment!', 'error');
+                window.history.pushState(null, null, window.location.href);
+            };
+            window.addEventListener('popstate', handlePopState);
+            return () => window.removeEventListener('popstate', handlePopState);
+        }
+    }, [phase, showToast]);
+
     // Anti-cheating: disable copy-paste AND right-click context menu
     useEffect(() => {
         const prevent = (e) => {
@@ -575,7 +588,7 @@ export default function AssessmentFlow() {
                             className="btn btn-primary"
                             onClick={startAptitude}
                             disabled={!agreed || loading}
-                            style={{ padding: '10px 28px', background: '#94a3b8', color: 'white', border: 'none', opacity: agreed ? 1 : 0.6, cursor: agreed ? 'pointer' : 'not-allowed' }}
+                            style={{ padding: '10px 28px', background: '#3B82F6', color: 'white', border: 'none', opacity: agreed ? 1 : 0.6, cursor: agreed ? 'pointer' : 'not-allowed' }}
                         >
                             {loading ? 'Processing...' : 'Next'}
                         </button>

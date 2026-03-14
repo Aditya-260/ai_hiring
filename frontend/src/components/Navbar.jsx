@@ -17,6 +17,7 @@ export default function Navbar() {
         recruiter: [
             { path: '/recruiter/company', label: 'Company' },
             { path: '/recruiter/jobs', label: 'My Jobs' },
+            { path: '/recruiter/decisions', label: 'Decisions' },
         ],
         admin: [
             { path: '/admin/dashboard', label: 'Dashboard' },

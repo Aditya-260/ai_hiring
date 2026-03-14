@@ -65,10 +65,19 @@ export default function CandidateJobs() {
                     <div key={job.id} className="card animate-slide-up" style={{ padding: 24, animationDelay: `${i * 0.05}s`, animationFillMode: 'backwards' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                             <div style={{ flex: 1 }}>
-                                <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}>{job.title}</h3>
-                                <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 10 }}>
-                                    {job.company_name} {job.company_location ? `• ${job.company_location}` : ''}
-                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                    <h3 style={{ fontSize: 17, fontWeight: 600, margin: 0 }}>{job.title}</h3>
+                                    {job.company_name && (
+                                        <span style={{ fontSize: 13, color: '#475569', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 500 }}>
+                                            🏢 {job.company_name}
+                                        </span>
+                                    )}
+                                </div>
+                                {job.company_location && (
+                                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                                        📍 {job.company_location}
+                                    </p>
+                                )}
                                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                                     <span className="badge badge-blue">{job.experience}</span>
                                     <span className="badge badge-green">{job.role}</span>

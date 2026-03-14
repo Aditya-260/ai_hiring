@@ -135,7 +135,6 @@ export default function AuthPage({ mode }) {
                         <input
                             className="input"
                             type={isLogin ? "text" : "email"}
-                            placeholder={isLogin ? "you@example.com or +919876543210" : "you@example.com"}
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
                             required
