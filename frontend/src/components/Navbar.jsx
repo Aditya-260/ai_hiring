@@ -51,9 +51,9 @@ export default function Navbar() {
                         width: 32, height: 32, borderRadius: 8,
                         background: 'linear-gradient(135deg, var(--accent) 0%, #8B5CF6 100%)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: 14,
-                    }}>AI</div>
-                    <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>HireAI</span>
+                        color: 'white', fontWeight: 700, fontSize: 13,
+                    }}>BH</div>
+                    <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>Beyond Hiring</span>
                 </Link>
                 <div style={{ display: 'flex', gap: 4 }}>
                     {items.map(item => (

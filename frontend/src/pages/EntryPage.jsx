@@ -49,7 +49,7 @@ export default function EntryPage() {
                     boxShadow: '0 8px 24px rgba(59,130,246,0.3)',
                 }}>AI</div>
                 <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 8, letterSpacing: '-0.5px' }}>
-                    Welcome to <span style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>HireAI</span>
+                    Welcome to <span style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Beyond Hiring</span>
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: 16, maxWidth: 440, margin: '0 auto' }}>
                     AI-powered recruitment platform that streamlines hiring with intelligent assessments
