@@ -101,7 +101,13 @@ async def remove_resume(user=Depends(require_role("candidate"))):
 @router.get("/jobs")
 async def list_jobs(user=Depends(require_role("candidate"))):
     jobs = []
+    now_iso = datetime.utcnow().isoformat()
     async for job in jobs_collection.find({"is_active": True}):
+        # Auto-vanish: skip jobs whose expiry has passed
+        expires_at = job.get("expires_at")
+        if expires_at and expires_at < now_iso:
+            continue
+
         job_id = str(job["_id"])
         company = await companies_collection.find_one({"_id": ObjectId(job["company_id"])}) if job.get("company_id") else None
         # Check if already applied
@@ -120,6 +126,7 @@ async def list_jobs(user=Depends(require_role("candidate"))):
             "company_name": company["name"] if company else job.get("company_name"),
             "company_location": company.get("location") if company else None,
             "created_at": job.get("created_at"),
+            "expires_at": expires_at,
             "already_applied": existing is not None,
             "application_status": existing.get("status") if existing else None,
         })

@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     proctoring_routes.stop_camera()
 
 
-app = FastAPI(title="AI Hiring Platform", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Beyond-Hiring API", version="1.0.0", lifespan=lifespan)
 
 # CORS
 app.add_middleware(
@@ -36,7 +36,7 @@ app.include_router(proctoring_routes.router)
 
 @app.get("/")
 async def root():
-    return {"message": "AI Hiring Platform API", "version": "1.0.0"}
+    return {"message": "Beyond-Hiring API", "version": "1.0.0"}
 
 
 @app.get("/api/auth/me")

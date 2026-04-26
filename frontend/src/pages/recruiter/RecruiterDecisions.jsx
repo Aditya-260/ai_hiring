@@ -95,9 +95,9 @@ export default function RecruiterDecisions() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                                             <div style={{
                                                 width: 38, height: 38, borderRadius: '50%',
-                                                background: 'var(--accent-light)', color: 'var(--accent)',
+                                                background: 'linear-gradient(135deg, var(--accent-light), #E0E7FF)', color: 'var(--accent)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontWeight: 600, fontSize: 14,
+                                                fontWeight: 600, fontSize: 14, boxShadow: '0 2px 4px rgba(79,70,229,0.1)'
                                             }}>
                                                 {c.candidate_name?.charAt(0)?.toUpperCase()}
                                             </div>
@@ -117,7 +117,7 @@ export default function RecruiterDecisions() {
                                         </div>
                                     </div>
                                     
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexDirection: 'column', alignItems: 'flex-end' }}>
                                         {c.disqualified ? (
                                             <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: '#7f1d1d', color: '#fff' }}>
                                                 ⛔ Disqualified

@@ -55,13 +55,23 @@ export default function QuestionBank() {
     if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>;
 
     return (
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ padding: '32px 40px', maxWidth: 1200, margin: '0 auto', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
                 <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Question Bank</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{questions.length} questions</p>
+                    <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.5px' }}>Question Bank</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>Manage {questions.length} assessment questions</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ text: '', options: ['', '', '', ''], correct_answer: '', category: 'technical', difficulty: 'medium', role_tag: '' }); }}>
+                <button 
+                    style={{
+                        padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+                        background: showForm ? 'white' : 'var(--text-primary)',
+                        color: showForm ? 'var(--text-primary)' : 'white',
+                        border: showForm ? '1px solid var(--border)' : 'none',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                        boxShadow: showForm ? 'none' : '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ text: '', options: ['', '', '', ''], correct_answer: '', category: 'technical', difficulty: 'medium', role_tag: '' }); }}
+                >
                     {showForm ? 'Cancel' : '+ Add Question'}
                 </button>
             </div>
@@ -114,38 +124,91 @@ export default function QuestionBank() {
                 </form>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
                 {questions.map((q, i) => (
-                    <div key={q.id} className="card animate-slide-up" style={{ padding: 16, animationDelay: `${i * 0.03}s`, animationFillMode: 'backwards' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <div key={q.id} style={{ 
+                        background: 'white', borderRadius: 16, padding: '20px 24px', 
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.02), 0 10px 15px rgba(0,0,0,0.03)',
+                        border: '1px solid rgba(0,0,0,0.04)',
+                        animationDelay: `${i * 0.03}s`, animationFillMode: 'both',
+                        transition: 'transform 0.2s, box-shadow 0.2s'
+                    }} 
+                    className="animate-slide-up"
+                    onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.02), 0 10px 15px rgba(0,0,0,0.03)';
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                             <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>{q.text}</p>
-                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                                    <span style={{ 
+                                        padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, textTransform: 'capitalize',
+                                        background: '#EFF6FF', color: '#2563EB'
+                                    }}>{q.category}</span>
+                                    <span style={{ 
+                                        padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, textTransform: 'capitalize',
+                                        background: q.difficulty === 'easy' ? '#F0FDF4' : q.difficulty === 'hard' ? '#FEF2F2' : '#FFFBEB',
+                                        color: q.difficulty === 'easy' ? '#16A34A' : q.difficulty === 'hard' ? '#DC2626' : '#D97706'
+                                    }}>{q.difficulty}</span>
+                                </div>
+                                <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: 'var(--text-primary)', lineHeight: 1.4 }}>{q.text}</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                     {q.options.map((o, idx) => (
-                                        <span key={idx} className="badge" style={{
-                                            background: o === q.correct_answer ? 'var(--success-light)' : 'var(--bg-secondary)',
-                                            color: o === q.correct_answer ? 'var(--success)' : 'var(--text-secondary)',
-                                            fontSize: 11,
+                                        <div key={idx} style={{
+                                            padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+                                            background: o === q.correct_answer ? '#ECFDF5' : 'var(--bg-secondary)',
+                                            color: o === q.correct_answer ? '#059669' : 'var(--text-secondary)',
+                                            border: `1px solid ${o === q.correct_answer ? '#A7F3D0' : 'transparent'}`,
+                                            display: 'flex', alignItems: 'center', gap: 8
                                         }}>
-                                            {o === q.correct_answer ? '✓ ' : ''}{o}
-                                        </span>
+                                            <div style={{ 
+                                                width: 20, height: 20, borderRadius: '50%', 
+                                                background: o === q.correct_answer ? '#059669' : 'white',
+                                                color: o === q.correct_answer ? 'white' : 'var(--text-muted)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: 11, fontWeight: 700, border: o === q.correct_answer ? 'none' : '1px solid var(--border)'
+                                            }}>
+                                                {o === q.correct_answer ? '✓' : String.fromCharCode(65 + idx)}
+                                            </div>
+                                            {o}
+                                        </div>
                                     ))}
                                 </div>
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                    <span className="badge badge-blue" style={{ fontSize: 11 }}>{q.category}</span>
-                                    <span className={`badge ${q.difficulty === 'easy' ? 'badge-green' : q.difficulty === 'hard' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: 11 }}>{q.difficulty}</span>
-                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                                <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => startEdit(q)}>Edit</button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <button 
+                                    style={{ 
+                                        background: 'white', border: '1px solid var(--border)', borderRadius: 8,
+                                        padding: '6px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                        color: 'var(--text-secondary)', transition: 'all 0.2s', width: 80
+                                    }} 
+                                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                                    onClick={() => startEdit(q)}
+                                >Edit</button>
                                 {confirmId === q.id ? (
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '3px 8px' }}>
-                                        <span style={{ fontSize: 11, color: '#DC2626', fontWeight: 500 }}>Sure?</span>
-                                        <button className="btn btn-danger" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => deleteQ(q.id)}>Yes</button>
-                                        <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11 }} onClick={() => setConfirmId(null)}>No</button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px' }}>
+                                        <span style={{ fontSize: 11, color: '#DC2626', fontWeight: 600, textAlign: 'center' }}>Delete permanently?</span>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <button className="btn btn-danger" style={{ flex: 1, padding: '4px', fontSize: 11, borderRadius: 6 }} onClick={() => deleteQ(q.id)}>Yes</button>
+                                            <button className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: 11, borderRadius: 6 }} onClick={() => setConfirmId(null)}>No</button>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <button className="btn btn-danger" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => setConfirmId(q.id)}>Delete</button>
+                                    <button 
+                                        style={{ 
+                                            background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8,
+                                            padding: '6px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                            color: '#DC2626', transition: 'all 0.2s', width: 80
+                                        }} 
+                                        onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+                                        onMouseLeave={e => e.currentTarget.style.background = '#FEF2F2'}
+                                        onClick={() => setConfirmId(q.id)}
+                                    >Delete</button>
                                 )}
                             </div>
                         </div>

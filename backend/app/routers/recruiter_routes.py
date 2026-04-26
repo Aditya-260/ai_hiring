@@ -1,5 +1,5 @@
 import httpx
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
@@ -79,11 +79,15 @@ async def create_job(data: JobCreate, user=Depends(require_role("recruiter"))):
     if not company:
         raise HTTPException(status_code=403, detail="You don't own this company")
 
+    now = datetime.utcnow()
+    expires_at = (now + timedelta(days=data.expires_in_days)).isoformat()
+
     doc = {
         **data.model_dump(),
         "recruiter_id": user["_id"],
         "is_active": True,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": now.isoformat(),
+        "expires_at": expires_at,
     }
     result = await jobs_collection.insert_one(doc)
     return {"message": "Job posted", "id": str(result.inserted_id)}
@@ -95,6 +99,9 @@ async def get_my_jobs(user=Depends(require_role("recruiter"))):
     async for j in jobs_collection.find({"recruiter_id": user["_id"]}):
         company = await companies_collection.find_one({"_id": ObjectId(j["company_id"])})
         app_count = await applications_collection.count_documents({"job_id": str(j["_id"])})
+        expires_at = j.get("expires_at")
+        now_iso = datetime.utcnow().isoformat()
+        is_expired = bool(expires_at and expires_at < now_iso)
         jobs.append({
             "id": str(j["_id"]),
             "title": j["title"],
@@ -105,6 +112,8 @@ async def get_my_jobs(user=Depends(require_role("recruiter"))):
             "applicant_count": app_count,
             "is_active": j.get("is_active", True),
             "created_at": j.get("created_at"),
+            "expires_at": expires_at,
+            "is_expired": is_expired,
         })
     return jobs
 
@@ -115,6 +124,10 @@ async def update_job(job_id: str, data: JobUpdate, user=Depends(require_role("re
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     update = {k: v for k, v in data.model_dump().items() if v is not None}
+    # If recruiter is extending the expiry, recompute expires_at from now
+    if "expires_in_days" in update:
+        days = update.pop("expires_in_days")
+        update["expires_at"] = (datetime.utcnow() + timedelta(days=days)).isoformat()
     if update:
         await jobs_collection.update_one({"_id": ObjectId(job_id)}, {"$set": update})
     return {"message": "Job updated"}

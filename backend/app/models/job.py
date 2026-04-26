@@ -11,6 +11,7 @@ class JobCreate(BaseModel):
     description: Optional[str] = None
     salary: Optional[str] = None  # hidden from candidates
     company_id: str
+    expires_in_days: int  # Recruiter must explicitly choose (7, 14, 30, or 60)
 
 
 class JobUpdate(BaseModel):
@@ -21,6 +22,7 @@ class JobUpdate(BaseModel):
     skills: Optional[list[str]] = None
     description: Optional[str] = None
     salary: Optional[str] = None
+    expires_in_days: Optional[int] = None  # Allows extending expiry on edit
 
 
 class JobOut(BaseModel):
@@ -36,4 +38,5 @@ class JobOut(BaseModel):
     company_name: Optional[str] = None
     recruiter_id: str
     created_at: Optional[str] = None
+    expires_at: Optional[str] = None
     is_active: bool = True

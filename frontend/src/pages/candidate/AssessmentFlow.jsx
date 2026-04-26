@@ -524,8 +524,8 @@ export default function AssessmentFlow() {
     if (phase === 'intro') {
         return (
             <div style={{ maxWidth: 840, margin: '40px auto', padding: '0 20px' }}>
-                <div className="card animate-fade-in" style={{ padding: '40px 48px', textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                    <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 32, textAlign: 'center', color: '#1e293b' }}>Instruction page</h2>
+                <div className="card glass animate-fade-in" style={{ padding: '48px 56px', textAlign: 'left', borderRadius: '24px', boxShadow: 'var(--shadow-lg)' }}>
+                    <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 32, textAlign: 'center', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Instruction page</h2>
 
                     <div style={{ color: '#334155', fontSize: 13, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -609,10 +609,9 @@ export default function AssessmentFlow() {
                 onContextMenu={e => e.preventDefault()}
             >
                 {/* ── Left: Question Navigation Sidebar ── */}
-                <div style={{
-                    width: 300, flexShrink: 0, background: 'white', borderRadius: 14,
-                    boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid var(--border)',
-                    padding: '22px 18px', position: 'sticky', top: 20,
+                <div className="glass" style={{
+                    width: 300, flexShrink: 0, borderRadius: 16,
+                    boxShadow: 'var(--shadow-md)', padding: '24px 20px', position: 'sticky', top: 20,
                 }}>
                     {/* Title + count */}
                     <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 5 }}>Questions</div>
@@ -623,9 +622,9 @@ export default function AssessmentFlow() {
                     {/* Legend */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
                         {[
-                            { color: '#2563eb', label: 'Current' },
-                            { color: '#16a34a', label: 'Answered' },
-                            { color: '#d1d5db', label: 'Not Answered' },
+                            { color: 'var(--accent)', label: 'Current' },
+                            { color: 'var(--success)', label: 'Answered' },
+                            { color: 'var(--border)', label: 'Not Answered' },
                         ].map(({ color, label }) => (
                             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
                                 <span style={{ width: 14, height: 14, borderRadius: 3, background: color, display: 'inline-block', flexShrink: 0 }} />
@@ -639,20 +638,21 @@ export default function AssessmentFlow() {
                         {questions.map((ques, idx) => {
                             const isCurrentQ = idx === currentQ;
                             const isAnswered = ques?.id && answers[ques.id] !== undefined;
-                            let bg = '#e5e7eb';       // not answered
-                            let color = '#374151';
-                            if (isCurrentQ) { bg = '#2563eb'; color = 'white'; }
-                            else if (isAnswered) { bg = '#16a34a'; color = 'white'; }
+                            let bg = 'white';       // not answered
+                            let color = 'var(--text-secondary)';
+                            let border = '1px solid var(--border)';
+                            if (isCurrentQ) { bg = 'var(--accent)'; color = 'white'; border = 'none'; }
+                            else if (isAnswered) { bg = 'var(--success-light)'; color = 'var(--success)'; border = '1px solid var(--success)'; }
                             return (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentQ(idx)}
                                     style={{
-                                        width: 44, height: 44, border: 'none', borderRadius: 8,
+                                        width: 44, height: 44, border: border, borderRadius: 12,
                                         background: bg, color: color,
                                         fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                                        transition: 'transform 0.1s, box-shadow 0.1s',
-                                        boxShadow: isCurrentQ ? '0 0 0 3px rgba(37,99,235,0.3)' : 'none',
+                                        transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        boxShadow: isCurrentQ ? 'var(--shadow-glow)' : 'none',
                                     }}
                                     onMouseEnter={e => { if (!isCurrentQ) e.currentTarget.style.transform = 'scale(1.1)'; }}
                                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -688,20 +688,21 @@ export default function AssessmentFlow() {
                         </div>
                     )}
 
-                    <div className="card" style={{ padding: 28 }}>
-                        <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 20, lineHeight: 1.5 }}>
+                    <div className="card glass" style={{ padding: 40, border: 'none', boxShadow: 'var(--shadow-md)' }}>
+                        <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 24, lineHeight: 1.6, color: 'var(--text-primary)' }}>
                             Q{currentQ + 1}. {q?.text}
                         </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {q?.options?.map((opt, idx) => (
                                 <label
                                     key={idx}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: 12,
-                                        padding: '12px 16px', borderRadius: 10,
+                                        padding: '16px 20px', borderRadius: 12,
                                         border: `2px solid ${q?.id && answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}`,
-                                        background: q?.id && answers[q.id] === opt ? 'var(--accent-light)' : 'white',
-                                        cursor: 'pointer', transition: 'all 0.2s',
+                                        background: q?.id && answers[q.id] === opt ? 'var(--accent-light)' : 'var(--bg-card)',
+                                        cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        boxShadow: q?.id && answers[q.id] === opt ? '0 4px 12px rgba(79, 70, 229, 0.1)' : 'none'
                                     }}
                                 >
                                     <input
@@ -768,22 +769,35 @@ export default function AssessmentFlow() {
 
     if (phase === 'aptitude_result') {
         return (
-            <div style={{ maxWidth: 500, margin: '60px auto', padding: '0 20px' }}>
-                <div className="card animate-fade-in" style={{ padding: 36, textAlign: 'center' }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>{result?.passed ? '✅' : '❌'}</div>
-                    <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', padding: 20 }}>
+                <div className="card animate-scale-up" style={{ 
+                    padding: 48, textAlign: 'center', maxWidth: 440, width: '100%',
+                    background: result?.passed ? 'linear-gradient(135deg, var(--bg-card), var(--success-light))' : 'linear-gradient(135deg, var(--bg-card), var(--danger-light))',
+                    border: result?.passed ? '1px solid #bbf7d0' : '1px solid #fecaca',
+                    boxShadow: result?.passed ? '0 12px 32px rgba(16, 185, 129, 0.1)' : '0 12px 32px rgba(239, 68, 68, 0.1)'
+                }}>
+                    <div style={{ fontSize: 64, marginBottom: 20, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
+                        {result?.passed ? '🎉' : '💔'}
+                    </div>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: result?.passed ? '#16a34a' : '#ef4444' }}>
                         {result?.passed ? 'Aptitude Test Passed!' : 'Aptitude Test Not Passed'}
                     </h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 20 }}>
-                        Score: {result?.correct}/{result?.total} ({result?.score}%)
-                    </p>
+                    <div style={{ 
+                        background: 'white', padding: '16px 20px', borderRadius: 12, marginBottom: 28, 
+                        border: '1px solid var(--border)', display: 'inline-block'
+                    }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Score Achieved</p>
+                        <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                            {result?.correct} <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>/ {result?.total}</span> ({result?.score}%)
+                        </p>
+                    </div>
                     {result?.passed ? (
-                        <button className="btn btn-primary" onClick={startInterview} disabled={loading} style={{ padding: '12px 32px' }}>
-                            {loading ? 'Loading...' : 'Proceed to AI Interview →'}
+                        <button className="btn btn-primary" onClick={startInterview} disabled={loading} style={{ width: '100%', padding: '14px', fontSize: 15 }}>
+                            {loading ? 'Preparing AI Interview...' : 'Proceed to AI Interview →'}
                         </button>
                     ) : (
-                        <button className="btn btn-secondary" onClick={() => navigate('/candidate/jobs')} style={{ padding: '12px 32px' }}>
-                            Back to Jobs
+                        <button className="btn btn-secondary" onClick={() => navigate('/candidate/jobs')} style={{ width: '100%', padding: '14px', fontSize: 15 }}>
+                            Back to Job Board
                         </button>
                     )}
                 </div>
@@ -852,7 +866,7 @@ export default function AssessmentFlow() {
                             ⚠️ {proctoringWarnings.length} alert{proctoringWarnings.length !== 1 ? 's' : ''}
                         </div>
                     )}
-                    <div style={{ flex: 1, background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14, border: '1px solid #334155' }}>
+                    <div className="glass-dark" style={{ flex: 1, borderRadius: 16, padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16, boxShadow: 'var(--shadow-md)' }}>
                         {/* Mic status pill */}
                         <div>
                             {isListening ? (
@@ -888,15 +902,15 @@ export default function AssessmentFlow() {
                 )}
 
                 {/* ── Question + Answer card ── */}
-                <div className="card" style={{ padding: 28 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div className="card glass" style={{ padding: 40, border: 'none', boxShadow: 'var(--shadow-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                         <span className="badge badge-blue">{q?.difficulty}</span>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Speak your answer loud and clear.</span>
                     </div>
 
                     {/* Question text with a distinct AI-question styling */}
-                    <div style={{ background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1px solid #bfdbfe', borderRadius: 10, padding: '14px 18px', marginBottom: 18 }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.6, color: '#1e40af', margin: 0 }}>
+                    <div style={{ background: 'linear-gradient(135deg, var(--accent-light), var(--bg-card))', border: '1px solid var(--accent-light)', borderRadius: 12, padding: '18px 24px', marginBottom: 24, boxShadow: 'var(--shadow-sm)' }}>
+                        <p style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.6, color: 'var(--accent)', margin: 0 }}>
                             🤖 {q?.question}
                         </p>
                     </div>
@@ -951,22 +965,26 @@ export default function AssessmentFlow() {
 
     if (phase === 'disqualified') {
         return (
-            <div style={{ maxWidth: 500, margin: '60px auto', padding: '0 20px' }}>
-                <div className="card animate-fade-in" style={{ padding: 36, textAlign: 'center', border: '2px solid var(--danger)' }}>
-                    <div style={{ fontSize: 56, marginBottom: 16 }}>🚫</div>
-                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--danger)' }}>Interview Terminated</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 8, lineHeight: 1.6 }}>
-                        You have been <strong style={{ color: 'var(--danger)' }}>disqualified</strong> from this interview due to a <strong>tab switch violation</strong>.
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', padding: 20 }}>
+                <div className="card animate-scale-up" style={{ 
+                    padding: 48, textAlign: 'center', maxWidth: 440, width: '100%',
+                    background: 'linear-gradient(135deg, white, #fef2f2)', border: '2px solid #fca5a5',
+                    boxShadow: '0 20px 40px rgba(239,68,68,0.15)'
+                }}>
+                    <div style={{ fontSize: 64, marginBottom: 20, animation: 'shake 0.5s ease-in-out' }}>🚫</div>
+                    <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: '#dc2626', letterSpacing: '-0.5px' }}>
+                        Interview Terminated
+                    </h2>
+                    <p style={{ color: '#7f1d1d', fontSize: 15, marginBottom: 24, lineHeight: 1.6, background: 'white', padding: 20, borderRadius: 12, border: '1px solid #fecaca' }}>
+                        You have been <strong>disqualified</strong> from this assessment due to a <strong>tab switch violation</strong>. This incident has been recorded and will be reviewed by the recruiter.
                     </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24 }}>
-                        This incident has been recorded and will be reviewed by the recruiter.
-                    </p>
-                    <div style={{ background: 'var(--danger-light)', padding: '10px 16px', borderRadius: 8, marginBottom: 24, fontSize: 13, color: 'var(--danger)' }}>
-                        ⚠️ Reason: Tab switch detected during live interview
+                    <div style={{ background: '#fee2e2', padding: '12px 16px', borderRadius: 8, marginBottom: 32, fontSize: 13, color: '#991b1b', fontWeight: 600 }}>
+                        ⚠️ Reason: Tab switch detected during live assessment
                     </div>
-                    <button className="btn btn-secondary" onClick={() => navigate('/candidate/jobs')} style={{ padding: '12px 32px' }}>
-                        Back to Jobs
+                    <button className="btn btn-secondary" onClick={() => navigate('/candidate/jobs')} style={{ width: '100%', padding: '14px', fontSize: 15, background: 'white', color: '#b91c1c', borderColor: '#fca5a5' }}>
+                        Exit Assessment
                     </button>
+                    <style>{`@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px) rotate(-5deg); } 75% { transform: translateX(8px) rotate(5deg); } }`}</style>
                 </div>
             </div>
         );
@@ -974,15 +992,21 @@ export default function AssessmentFlow() {
 
     if (phase === 'interview_result') {
         return (
-            <div style={{ maxWidth: 500, margin: '60px auto', padding: '0 20px' }}>
-                <div className="card animate-fade-in" style={{ padding: 36, textAlign: 'center' }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-                    <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>Assessment Complete!</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 20 }}>
-                        Your responses have been evaluated. The recruiter will review your results.
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', padding: 20 }}>
+                <div className="card animate-scale-up" style={{ 
+                    padding: 48, textAlign: 'center', maxWidth: 440, width: '100%',
+                    background: 'linear-gradient(135deg, white, #eff6ff)', border: '1px solid #bfdbfe',
+                    boxShadow: '0 20px 40px rgba(59,130,246,0.1)'
+                }}>
+                    <div style={{ fontSize: 64, marginBottom: 20, filter: 'drop-shadow(0 8px 16px rgba(59,130,246,0.3))' }}>✨</div>
+                    <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 12, color: '#1e40af', letterSpacing: '-0.5px' }}>
+                        Assessment Complete!
+                    </h2>
+                    <p style={{ color: '#334155', fontSize: 15, marginBottom: 32, lineHeight: 1.6, padding: '0 10px' }}>
+                        Fantastic job! Your responses and video recordings have been securely saved and evaluated. The recruiter will be in touch shortly.
                     </p>
-                    <button className="btn btn-primary" onClick={() => navigate('/candidate/jobs')} style={{ padding: '12px 32px' }}>
-                        Back to Jobs
+                    <button className="btn btn-primary" onClick={() => navigate('/candidate/jobs')} style={{ width: '100%', padding: '14px', fontSize: 15, background: '#3b82f6' }}>
+                        Return to Job Board
                     </button>
                 </div>
             </div>

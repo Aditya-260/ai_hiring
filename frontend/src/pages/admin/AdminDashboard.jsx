@@ -21,24 +21,36 @@ export default function AdminDashboard() {
     ];
 
     return (
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
-            <div style={{ marginBottom: 28 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Admin Dashboard</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Overview of the AI Hiring Platform</p>
+        <div style={{ padding: '32px 40px', maxWidth: 1200, margin: '0 auto', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+            <div style={{ marginBottom: 32 }}>
+                <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.5px' }}>Admin Dashboard</h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>Overview of Beyond-Hiring</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
                 {cards.map((c, i) => (
-                    <div key={i} className="card animate-slide-up" style={{ padding: 20, animationDelay: `${i * 0.05}s`, animationFillMode: 'backwards' }}>
+                    <div key={i} className="animate-slide-up" style={{ 
+                        padding: 24, animationDelay: `${i * 0.05}s`, animationFillMode: 'both',
+                        background: 'white', borderRadius: 16,
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.02), 0 10px 15px rgba(0,0,0,0.03)',
+                        border: '1px solid rgba(0,0,0,0.04)',
+                        transition: 'transform 0.2s, box-shadow 0.2s'
+                    }} onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
+                    }} onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.02), 0 10px 15px rgba(0,0,0,0.03)';
+                    }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>{c.label}</p>
-                                <p style={{ fontSize: 28, fontWeight: 700 }}>{c.value ?? 0}</p>
+                                <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 500 }}>{c.label}</p>
+                                <p style={{ fontSize: 36, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{c.value ?? 0}</p>
                             </div>
                             <div style={{
-                                width: 40, height: 40, borderRadius: 10,
+                                width: 48, height: 48, borderRadius: 12,
                                 background: c.gradient,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 18,
+                                fontSize: 24, color: 'white'
                             }}>
                                 {c.icon}
                             </div>

@@ -1,4 +1,4 @@
-# AI Hiring Platform
+# Beyond-Hiring
 
 An AI-powered end-to-end hiring platform with intelligent interview assessment, aptitude testing, and real-time proctoring.
 

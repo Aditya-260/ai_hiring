@@ -20,6 +20,7 @@ import UserManagement from './pages/admin/UserManagement';
 import CompanyManagement from './pages/admin/CompanyManagement';
 import QuestionBank from './pages/admin/QuestionBank';
 import SecurityLogs from './pages/admin/SecurityLogs';
+import ApplicationsOverview from './pages/admin/ApplicationsOverview';
 
 function Layout({ children }) {
   return (
@@ -71,6 +72,7 @@ export default function App() {
             <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
             <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
             <Route path="/admin/companies" element={<AdminLayout><CompanyManagement /></AdminLayout>} />
+            <Route path="/admin/applications" element={<AdminLayout><ApplicationsOverview /></AdminLayout>} />
             <Route path="/admin/questions" element={<AdminLayout><QuestionBank /></AdminLayout>} />
             <Route path="/admin/logs" element={<AdminLayout><SecurityLogs /></AdminLayout>} />
 

@@ -1,9 +1,9 @@
 from datetime import datetime
 import re
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.auth import hash_password, verify_password, create_access_token
+from app.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.database import users_collection, system_logs_collection
 from app.models.user import UserCreate, UserLogin
 
@@ -90,6 +90,17 @@ async def login(creds: UserLogin):
             "email": user["email"],
             "role": user["role"],
         },
+    }
+
+
+@router.get("/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user["_id"],
+        "first_name": current_user.get("first_name", current_user.get("name")),
+        "last_name": current_user.get("last_name"),
+        "email": current_user["email"],
+        "role": current_user["role"],
     }
 
 

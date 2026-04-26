@@ -63,14 +63,19 @@ _active_user_email: str | None = None
 _camera_running = False
 
 _last_warning_time: dict = {}
-WARNING_COOLDOWN_SECS = 5
+WARNING_COOLDOWN_SECS = 5          # general warnings (face, head pose)
+OBJECT_WARNING_COOLDOWN_SECS = 3  # repeat alert every 3s if object stays in frame
+
+# Consecutive-frame confirmation for objects: maps label → count of frames it was seen back-to-back
+_object_consecutive: dict = {}
+OBJECT_CONFIRM_FRAMES = 1          # must be detected in N consecutive analysis frames to alert
 
 
 # ── Warning helper ────────────────────────────────────────────────────────────
-def _push_warning(warning_type: str, message: str):
+def _push_warning(warning_type: str, message: str, cooldown: float = WARNING_COOLDOWN_SECS):
     now = time.time()
     key = f"{warning_type}:{message}"
-    if key in _last_warning_time and (now - _last_warning_time[key]) < WARNING_COOLDOWN_SECS:
+    if key in _last_warning_time and (now - _last_warning_time[key]) < cooldown:
         return
     _last_warning_time[key] = now
     timestamp = datetime.now().strftime("%H:%M:%S")
@@ -156,31 +161,45 @@ def _analysis_thread():
                     ):
                         _push_warning("danger", f"Head pose: {head_status}")
 
-                # Object detection — runs every 2nd frame REGARDLESS of face count
-                # This ensures phones/books are caught even when multiple people are in frame
-                if frame_count % 2 == 0:
-                    detected_items = detectObject(frame)
-                    
-                    # 1. Check for multiple people via YOLO (fallback for dlib side-profile misses)
-                    person_count = sum(1 for obj in detected_items if obj[0] == "person")
-                    if person_count > 1 and faceCount <= 1:
-                        _push_warning("danger", "Multiple faces detected!")
-                    elif person_count >= 1 and faceCount == 0:
-                        # YOLO sees a person but dlib doesn't see a face (e.g. looking away)
-                        # We suppress the 'No face detected' warning to avoid annoying the user
-                        pass
+                # Object detection — runs EVERY analysis frame for maximum coverage
+                # YOLOv3-tiny misses objects on individual frames; consecutive confirmation
+                # avoids false positives while still catching real objects reliably.
+                detected_items = detectObject(frame)
 
-                    # 2. Check for actual suspicious objects
-                    suspicious_objs = [obj for obj in detected_items if obj[0] != "person"]
-                    if suspicious_objs:
-                        names = ", ".join(o[0] for o in suspicious_objs)
-                        _push_warning("danger", f"Suspicious object(s): {names}")
+                # 1. Check for multiple people via YOLO (fallback for dlib side-profile misses)
+                person_count = sum(1 for obj in detected_items if obj[0] == "person")
+                if person_count > 1 and faceCount <= 1:
+                    _push_warning("danger", "Multiple faces detected!")
+                elif person_count >= 1 and faceCount == 0:
+                    # YOLO sees a person but dlib doesn't see a face (e.g. looking away)
+                    pass
+
+                # 2. Suspicious object detection with consecutive-frame confirmation
+                # Increment counter for each seen label; reset unseen ones to 0
+                seen_labels = {obj[0] for obj in detected_items if obj[0] != "person"}
+                all_tracked = set(_object_consecutive.keys()) | seen_labels
+                for label in all_tracked:
+                    if label in seen_labels:
+                        _object_consecutive[label] = _object_consecutive.get(label, 0) + 1
+                    else:
+                        _object_consecutive[label] = 0  # reset streak
+
+                # Fire alert only when a label has been detected OBJECT_CONFIRM_FRAMES in a row
+                confirmed = [
+                    label for label, count in _object_consecutive.items()
+                    if count >= OBJECT_CONFIRM_FRAMES
+                ]
+                if confirmed:
+                    names = ", ".join(confirmed)
+                    _push_warning("danger", f"Suspicious object(s): {names}",
+                                  cooldown=OBJECT_WARNING_COOLDOWN_SECS)
+                    logger.info(f"🚨 Object alert fired: {names}")
 
             except Exception as e:
                 logger.debug(f"Analysis error (non-fatal): {e}")
 
             frame_count += 1
-            time.sleep(0.1)
+            time.sleep(0.05)  # ~20 analysis FPS — better object detection coverage
 
     except Exception as e:
         logger.error(f"Analysis thread error: {e}")

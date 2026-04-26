@@ -32,30 +32,27 @@ export default function Navbar() {
 
     return (
         <nav style={{
-            background: 'white',
-            borderBottom: '1px solid var(--border)',
-            padding: '0 32px',
-            height: 64,
+            borderBottom: '1px solid rgba(231, 229, 228, 0.7)',
+            padding: '0 40px',
+            height: 70,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
             zIndex: 100,
-            backdropFilter: 'blur(10px)',
-            backgroundColor: 'rgba(255,255,255,0.9)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            backgroundColor: 'rgba(250, 250, 249, 0.85)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.02)',
+            transition: 'all 0.3s ease'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-                <Link to={user.role === 'candidate' ? '/candidate/categories' : `/${user.role}/dashboard`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                        width: 32, height: 32, borderRadius: 8,
-                        background: 'linear-gradient(135deg, var(--accent) 0%, #8B5CF6 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: 13,
-                    }}>BH</div>
-                    <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>Beyond Hiring</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+                <Link to={user.role === 'candidate' ? '/candidate/categories' : `/${user.role}/dashboard`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <img src="/logo.png" alt="Beyond-Hiring Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+                    <span style={{ fontWeight: 800, fontSize: 26, color: 'var(--text-primary)' }}>Beyond-Hiring</span>
                 </Link>
-                <div style={{ display: 'flex', gap: 4 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                     {items.map(item => (
                         <Link
                             key={item.path}
@@ -63,40 +60,49 @@ export default function Navbar() {
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: 8,
-                                fontSize: 14,
-                                fontWeight: 500,
+                                fontSize: 13,
+                                fontWeight: 600,
                                 textDecoration: 'none',
-                                color: location.pathname === item.path ? 'var(--accent)' : 'var(--text-secondary)',
-                                background: location.pathname === item.path ? 'var(--accent-light)' : 'transparent',
-                                transition: 'all 0.2s',
+                                color: location.pathname === item.path ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                background: location.pathname === item.path ? 'var(--bg-secondary)' : 'transparent',
+                                transition: 'all 0.2s ease',
                             }}
+                            onMouseEnter={e => { if (location.pathname !== item.path) Object.assign(e.currentTarget.style, { background: 'rgba(0,0,0,0.03)', color: 'var(--text-primary)' }) }}
+                            onMouseLeave={e => { if (location.pathname !== item.path) Object.assign(e.currentTarget.style, { background: 'transparent', color: 'var(--text-secondary)' }) }}
                         >
                             {item.label}
                         </Link>
                     ))}
                 </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{user.role}</div>
+                    </div>
                     <div style={{
-                        width: 34, height: 34, borderRadius: '50%',
-                        background: 'var(--bg-secondary)',
+                        width: 40, height: 40, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1))',
+                        border: '1px solid rgba(59,130,246,0.15)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)',
+                        fontSize: 16, fontWeight: 700, color: 'var(--accent)',
                     }}>
                         {user.name?.charAt(0)?.toUpperCase()}
                     </div>
-                    <div>
-                        <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.2 }}>{user.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{user.role}</div>
-                    </div>
                 </div>
+                <div style={{ width: 1, height: 24, background: 'var(--border)' }}></div>
                 <button
                     onClick={() => { logout(); navigate('/entry'); }}
-                    className="btn btn-secondary"
-                    style={{ padding: '6px 14px', fontSize: 13 }}
+                    style={{ 
+                        padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                        background: 'transparent', color: 'var(--text-secondary)',
+                        border: 'none', cursor: 'pointer', transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
-                    Logout
+                    Log out
                 </button>
             </div>
         </nav>

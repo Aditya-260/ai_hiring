@@ -8,6 +8,7 @@ export default function AdminNavbar() {
         { path: '/admin/dashboard', label: 'Dashboard' },
         { path: '/admin/users', label: 'Users' },
         { path: '/admin/companies', label: 'Companies' },
+        { path: '/admin/applications', label: 'Applications' },
         { path: '/admin/questions', label: 'Questions' },
         { path: '/admin/logs', label: 'Logs' },
     ];
@@ -28,14 +29,9 @@ export default function AdminNavbar() {
             backgroundColor: 'rgba(255,255,255,0.9)',
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-                <Link to={`/admin/dashboard`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                        width: 32, height: 32, borderRadius: 8,
-                        background: 'linear-gradient(135deg, var(--accent) 0%, #8B5CF6 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: 13,
-                    }}>BH</div>
-                    <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>Beyond Hiring Admin</span>
+                <Link to={`/admin/dashboard`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <img src="/logo.png" alt="Beyond-Hiring Logo" style={{ width: 54, height: 54, objectFit: 'contain', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
+                    <span style={{ fontWeight: 800, fontSize: 24, color: 'var(--text-primary)' }}>Beyond-Hiring Admin</span>
                 </Link>
                 <div style={{ display: 'flex', gap: 4 }}>
                     {items.map(item => (
