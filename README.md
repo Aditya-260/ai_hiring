@@ -4,10 +4,10 @@ An AI-powered end-to-end hiring platform with intelligent interview assessment, 
 
 ## Features
 
-- 🧠 **AI Interview** — Voice-based interviews with Groq LLM-powered questions & answer evaluation
+- 🧠 **AI Interview** — Voice-based interviews with LLM-powered questions & answer evaluation
 - 📝 **Aptitude Test** — Automated MCQ assessment with scoring
 - 📷 **Proctoring** — Real-time face detection, head-pose estimation, and object detection (phone, etc.)
-- 👔 **Recruiter Dashboard** — Candidate ranking, proctoring logs, video playback
+- 👔 **Recruiter Dashboard** — Candidate ranking, proctoring logs, video playback, decision dashboard
 - 🔐 **Auth** — JWT-based auth with candidate, recruiter & admin roles
 
 ## Tech Stack
@@ -16,8 +16,8 @@ An AI-powered end-to-end hiring platform with intelligent interview assessment, 
 |---|---|
 | Frontend | React + Vite |
 | Backend | FastAPI + Python |
-| Database | MongoDB Atlas |
-| AI/LLM | Groq API (llama-3.3-70b) |
+| Database | MongoDB|
+| AI/LLM | Groq API |
 | Proctoring | OpenCV + dlib + YOLOv3-tiny |
 
 > ⚡ **No GPU required** — All AI runs via Groq Cloud API. Proctoring uses lightweight CPU-based OpenCV/dlib models.
