@@ -158,22 +158,31 @@ def _evaluate_answer_with_groq(question: str, answer: str) -> Optional[dict]:
     if not answer or len(answer.strip()) < 10:
         return {"score": 0.0, "feedback": "Answer is too short or empty. Please provide a detailed response."}
 
-    prompt = f"""Evaluate this interview answer.
+    prompt = f"""Evaluate this interview answer VERY STRICTLY.
 
 Question: {question}
 Answer: {answer}
 
-Score the answer from 1-10 based on:
-- Relevance to the question
-- Technical depth and accuracy
-- Use of concrete examples
-- Clarity of explanation
+First, determine the core technical concepts required to correctly answer the question.
+Then, evaluate if the candidate's answer actually addresses these concepts and matches the question asked.
+
+Score the answer from 0.0 to 10.0 based on:
+1. Relevance: Does it directly match and answer the specific question asked?
+2. Correctness: Is the technical information factually correct?
+3. Depth: Does it provide specific examples or just vague buzzwords?
+
+STRICT SCORING RULES:
+- If the answer does not match the question, is factually incorrect, or is completely evasive, the score MUST be between 0.0 and 2.0.
+- If the answer is somewhat related but mostly vague buzzwords, the score MUST be between 2.0 and 4.0.
+- DO NOT give high scores just because the answer is long, well-spoken, or confident.
+- Only award 7.0+ for answers that directly match the question, are factually correct, and demonstrate specific technical knowledge.
 
 Return ONLY valid JSON with these keys:
+- "ideal_concepts": brief summary of what a correct answer should contain
 - "score": number between 0.0 and 10.0
-- "feedback": one-sentence feedback (max 30 words)
+- "feedback": one-sentence feedback (max 30 words) explaining the score
 
-Example: {{"score": 7.5, "feedback": "Good explanation with relevant examples, but could elaborate more on edge cases."}}"""
+Example: {{"ideal_concepts": "Explanation of virtual DOM and reconciliation process.", "score": 2.0, "feedback": "Answer talked about React components but failed to explain the virtual DOM as asked."}}"""
 
     try:
         response = _groq_client.chat.completions.create(

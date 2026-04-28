@@ -13,7 +13,15 @@ export default function CandidateJobs() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        api.get('/candidate/jobs').then(res => setJobs(res.data)).catch(() => { }).finally(() => setLoading(false));
+        api.get('/candidate/jobs').then(res => {
+            const sortedJobs = res.data.sort((a, b) => {
+                if (!a.expires_at && !b.expires_at) return 0;
+                if (!a.expires_at) return 1;
+                if (!b.expires_at) return -1;
+                return new Date(a.expires_at) - new Date(b.expires_at);
+            });
+            setJobs(sortedJobs);
+        }).catch(() => { }).finally(() => setLoading(false));
     }, []);
 
     // ── Expiry urgency helper ─────────────────────────────
@@ -135,7 +143,7 @@ export default function CandidateJobs() {
             </div>
 
             {/* Jobs List */}
-            <div style={{ maxWidth: 1000, margin: '-24px auto 48px', padding: '0 20px', position: 'relative', zIndex: 2 }}>
+            <div style={{ maxWidth: 1000, margin: '24px auto 48px', padding: '0 20px', position: 'relative', zIndex: 2 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Recommended for you ({jobs.length})</h2>
                 </div>
@@ -182,7 +190,7 @@ export default function CandidateJobs() {
                                             <span style={{ fontSize: 12, fontWeight: 600, color: '#059669', background: '#ECFDF5', padding: '4px 10px', borderRadius: 12 }}>
                                                 {job.role}
                                             </span>
-                                            {job.skills?.slice(0, 3).map(s => (
+                                            {job.skills?.map(s => (
                                                 <span key={s} style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: 12, border: '1px solid var(--border)' }}>
                                                     {s}
                                                 </span>

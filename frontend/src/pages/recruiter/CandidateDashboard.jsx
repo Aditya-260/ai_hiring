@@ -272,10 +272,10 @@ export default function CandidateDashboard() {
 
                                             {!isExpired && c.status !== 'shortlisted' && c.status !== 'rejected' && c.final_score != null && (
                                                 <>
-                                                    <button className="btn" style={{ fontSize: 13, background: '#10B981', border: 'none', color: 'white', fontWeight: 600, padding: '8px 16px', borderRadius: 8 }} onClick={() => makeDecision(c.id, 'shortlisted')}>
+                                                    <button className="btn" style={{ fontSize: 13, background: '#10B981', border: 'none', color: 'white', fontWeight: 600, padding: '8px 16px', borderRadius: 8 }} onClick={() => { if (window.confirm('Are you sure you want to shortlist this candidate?')) makeDecision(c.id, 'shortlisted'); }}>
                                                         ✓ Shortlist
                                                     </button>
-                                                    <button className="btn" style={{ fontSize: 13, background: 'white', border: '1px solid #FECACA', color: '#DC2626', fontWeight: 600, padding: '8px 16px', borderRadius: 8 }} onClick={() => makeDecision(c.id, 'rejected')}>
+                                                    <button className="btn" style={{ fontSize: 13, background: 'white', border: '1px solid #FECACA', color: '#DC2626', fontWeight: 600, padding: '8px 16px', borderRadius: 8 }} onClick={() => { if (window.confirm('Are you sure you want to reject this candidate?')) makeDecision(c.id, 'rejected'); }}>
                                                         ✗ Reject
                                                     </button>
                                                 </>

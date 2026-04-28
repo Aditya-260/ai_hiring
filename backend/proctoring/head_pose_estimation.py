@@ -164,7 +164,7 @@ def head_pose_detection(faces, img):
             print('Head down')
             cv2.putText(img, 'Head down', (50, 50), font, 2, (255, 255, 128), 2)
             return "Head Down"
-        if ang2 >= 30:
+        if ang2 >= 45:
             print('Head right')
             cv2.putText(img, 'Head right', (50, 30), font, 2, (255, 255, 128), 2)
             return "Head Right"
