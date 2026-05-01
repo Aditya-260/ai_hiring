@@ -17,7 +17,7 @@ AI Hiring Platform is a full-stack recruitment system designed to simulate a str
 
 | Layer | Technology |
 |---|---|
-| Frontend | React + Vite |
+| Frontend | React + Vite + TailwindCSS|
 | Backend | FastAPI + Python |
 | Database | MongoDB|
 | AI/LLM | Groq API |
