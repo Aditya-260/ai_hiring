@@ -2,6 +2,9 @@
 
 An AI-powered end-to-end hiring platform with intelligent interview assessment, aptitude testing, and real-time proctoring.
 
+Detail Description:
+AI Hiring Platform is a full-stack recruitment system designed to simulate a structured hiring process for both candidates and recruiters. The platform enables candidates to register, upload resumes, take aptitude tests, and participate in AI-driven interview stages, followed by a final evaluation. Recruiters can manage candidates through a dedicated dashboard, review performance, and make hiring decisions such as shortlisting or rejection. The system focuses on scalable backend architecture, role-based access control, and integrates computer vision modules for monitoring and behavior analysis during assessments.
+
 ## Features
 
 - 🧠 **AI Interview** — Voice-based interviews with LLM-powered questions & answer evaluation
